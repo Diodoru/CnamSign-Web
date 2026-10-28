@@ -1,0 +1,43 @@
+{% extends "base.html" %}
+{% block title %}{{ "Inscription" if mode == "register" else "Connexion" }} · {{ app_name }}{% endblock %}
+{% block content %}
+<div class="max-w-sm mx-auto mt-10 bg-white rounded-xl shadow-sm border border-slate-200 p-6">
+  <div class="flex mb-6 border-b border-slate-200 text-sm">
+    <a href="/login" class="flex-1 text-center pb-2 {{ 'border-b-2 border-indigo-600 font-medium' if mode == 'login' else 'text-slate-500' }}">Connexion</a>
+    {% if registration_open %}
+    <a href="/register" class="flex-1 text-center pb-2 {{ 'border-b-2 border-indigo-600 font-medium' if mode == 'register' else 'text-slate-500' }}">Inscription</a>
+    {% endif %}
+  </div>
+
+  {% if error %}
+  <div class="mb-4 rounded-md bg-red-50 border border-red-200 text-red-800 text-sm px-3 py-2">{{ error }}</div>
+  {% endif %}
+
+  <form method="post" action="/{{ mode }}" class="space-y-4">
+    <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+    <label class="block">
+      <span class="text-sm font-medium">Nom d'utilisateur</span>
+      <input name="username" value="{{ username or '' }}" required autocomplete="username" minlength="3" maxlength="32"
+             class="mt-1 w-full rounded-md border border-slate-300 px-3 py-2 focus:outline-none focus:ring-2 focus:ring-indigo-500">
+    </label>
+    <label class="block">
+      <span class="text-sm font-medium">Mot de passe</span>
+      <input type="password" name="password" required
+             autocomplete="{{ 'new-password' if mode == 'register' else 'current-password' }}"
+             {% if mode == 'register' %}minlength="10"{% endif %}
+             class="mt-1 w-full rounded-md border border-slate-300 px-3 py-2 focus:outline-none focus:ring-2 focus:ring-indigo-500">
+    </label>
+    {% if mode == "register" %}
+    <label class="block">
+      <span class="text-sm font-medium">Confirmation</span>
+      <input type="password" name="password_confirm" required autocomplete="new-password" minlength="10"
+             class="mt-1 w-full rounded-md border border-slate-300 px-3 py-2 focus:outline-none focus:ring-2 focus:ring-indigo-500">
+    </label>
+    <p class="text-xs text-slate-500">Ce compte sert uniquement à accéder à l'application. Vos identifiants Le Cnam seront demandés ensuite et stockés chiffrés.</p>
+    {% endif %}
+    <button class="w-full rounded-md bg-indigo-600 text-white py-2 font-medium hover:bg-indigo-700">
+      {{ "Créer mon compte" if mode == "register" else "Se connecter" }}
+    </button>
+  </form>
+</div>
+{% endblock %}

@@ -1,0 +1,43 @@
+{% extends "base.html" %}
+{% block title %}Tableau de bord · {{ app_name }}{% endblock %}
+{% block content %}
+<div class="grid gap-6 lg:grid-cols-3">
+
+  <div class="lg:col-span-2 space-y-6">
+    {% include "components/status.html" %}
+    <div id="action-result"></div>
+
+    <section class="bg-white rounded-xl shadow-sm border border-slate-200 p-5">
+      <div class="flex flex-wrap items-center justify-between gap-3 mb-4">
+        <h2 class="font-semibold">Historique des signatures</h2>
+        <form id="log-filters" hx-get="/partials/logs" hx-target="#logs-table" hx-trigger="change"
+              class="flex gap-2 text-sm">
+          <select name="status" class="rounded-md border border-slate-300 px-2 py-1">
+            <option value="">Tous les statuts</option>
+            <option value="SUCCESS">Signé</option>
+            <option value="FAILED">Échec</option>
+          </select>
+          <select name="days" class="rounded-md border border-slate-300 px-2 py-1">
+            <option value="1">24 h</option>
+            <option value="7">7 jours</option>
+            <option value="30" selected>30 jours</option>
+            <option value="0">Tout</option>
+          </select>
+        </form>
+      </div>
+      <div id="logs-table" hx-get="/partials/logs" hx-include="#log-filters"
+           hx-trigger="load, every 30s, status-refresh from:body">
+        <p class="text-sm text-slate-400">Chargement…</p>
+      </div>
+    </section>
+  </div>
+
+  <div class="space-y-6">
+    {% include "components/credentials_form.html" %}
+    {% include "components/notifications_form.html" %}
+    <p class="text-xs text-slate-400 px-1">
+      Vérifications automatiques : {{ schedule if scheduler_enabled else "désactivées sur cette instance" }}.
+    </p>
+  </div>
+</div>
+{% endblock %}

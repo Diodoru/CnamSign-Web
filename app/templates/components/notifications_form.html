@@ -1,0 +1,47 @@
+{# Rechargé après un changement d'identifiants (l'adresse destinataire peut changer). #}
+<section id="notifications-card" hx-get="/partials/notifications" hx-trigger="notifications-refresh from:body"
+         hx-swap="outerHTML" class="bg-white rounded-xl shadow-sm border border-slate-200 p-5">
+  <h2 class="font-semibold mb-3">Notifications e-mail</h2>
+
+  {% if not notify_recipient %}
+  <p class="text-sm text-slate-500">Enregistrez vos identifiants Le Cnam pour activer les notifications.</p>
+  {% else %}
+  {% set on_success = not notification or notification.notify_on_success %}
+  {% set on_failure = not notification or notification.notify_on_failure %}
+
+  {# Enregistrement immédiat à chaque changement de case. #}
+  <form hx-post="/notifications" hx-trigger="change" hx-target="#notifications-card" hx-swap="outerHTML"
+        class="space-y-2 text-sm">
+    <label class="flex items-start gap-2 cursor-pointer">
+      <input type="checkbox" name="notify_on_success" value="true" class="mt-0.5 rounded border-slate-300"
+             {% if on_success %}checked{% endif %}>
+      <span>Me prévenir par e-mail en cas de signature réussie</span>
+    </label>
+    <label class="flex items-start gap-2 cursor-pointer">
+      <input type="checkbox" name="notify_on_failure" value="true" class="mt-0.5 rounded border-slate-300"
+             {% if on_failure %}checked{% endif %}>
+      <span>Me prévenir par e-mail en cas d'échec de signature</span>
+    </label>
+  </form>
+
+  <div class="mt-4 rounded-md px-3 py-2 text-sm break-words
+              {{ 'bg-green-50 border border-green-200 text-green-800' if on_success or on_failure else 'bg-slate-50 border border-slate-200 text-slate-600' }}">
+    {% if on_success or on_failure %}
+    Notifications e-mail actives (envoyées à <strong>{{ notify_recipient }}</strong>)
+    {% else %}
+    Notifications e-mail désactivées
+    {% endif %}
+  </div>
+  <p class="mt-2 text-xs text-slate-400">Envoi via {{ smtp_mode }}.</p>
+
+  {% if alert_message %}
+  <div class="mt-3">{% with kind=alert_kind, message=alert_message %}{% include "components/alert.html" %}{% endwith %}</div>
+  {% endif %}
+
+  <button hx-post="/notifications/test" hx-target="#notif-result" hx-disabled-elt="this"
+          class="mt-3 rounded-md border border-slate-300 px-3 py-1.5 text-sm hover:bg-slate-100 disabled:opacity-50">
+    Envoyer un e-mail de test
+  </button>
+  <div id="notif-result" class="mt-3"></div>
+  {% endif %}
+</section>

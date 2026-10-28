@@ -1,0 +1,53 @@
+{# Bloc rafraîchi par polling HTMX (plus vite pendant une exécution). #}
+<section id="status-card" hx-get="/partials/status" hx-trigger="every {{ '3s' if busy else '10s' }}, status-refresh from:body"
+         hx-swap="outerHTML" class="bg-white rounded-xl shadow-sm border border-slate-200 p-5">
+  <div class="flex items-start justify-between gap-4">
+    <div>
+      <h2 class="font-semibold">Statut</h2>
+      {% if credential %}
+      <p class="text-sm text-slate-500">Dernière vérification : {{ credential.last_check_at | localdt }}</p>
+      {% endif %}
+    </div>
+    {% if credential %}
+    {% set enabled = credential.auto_sign_enabled %}
+    <button hx-post="/cnam/toggle" hx-target="#status-card" hx-swap="outerHTML"
+            role="switch" aria-checked="{{ 'true' if enabled else 'false' }}"
+            class="flex items-center gap-2 text-sm">
+      <span>Signature auto</span>
+      <span class="relative inline-flex h-6 w-11 items-center rounded-full transition {{ 'bg-indigo-600' if enabled else 'bg-slate-300' }}">
+        <span class="inline-block h-5 w-5 transform rounded-full bg-white shadow transition {{ 'translate-x-5' if enabled else 'translate-x-0.5' }}"></span>
+      </span>
+    </button>
+    {% endif %}
+  </div>
+
+  {% if not credential %}
+  <p class="mt-4 text-sm text-slate-600">Enregistrez vos identifiants Le Cnam (à droite) pour commencer.</p>
+  {% else %}
+  {% set label, classes = STATUS_STYLES[credential.last_status.value] %}
+  <div class="mt-4 flex flex-wrap items-center gap-3">
+    <span class="rounded-full px-3 py-1 text-sm font-medium {{ classes }}">{{ label }}</span>
+    {% if busy %}
+    <span class="flex items-center gap-2 text-sm text-indigo-700">
+      <svg class="h-4 w-4 animate-spin" viewBox="0 0 24 24" fill="none"><circle cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4" class="opacity-25"/><path d="M4 12a8 8 0 018-8" stroke="currentColor" stroke-width="4" class="opacity-75"/></svg>
+      Vérification en cours…
+    </span>
+    {% else %}
+    <button hx-post="/cnam/check-now" hx-target="#action-result"
+            class="rounded-md border border-slate-300 px-3 py-1 text-sm hover:bg-slate-100">Vérifier maintenant</button>
+    {% endif %}
+  </div>
+  {% if credential.last_message %}
+  <p class="mt-3 text-sm text-slate-600">{{ credential.last_message }}</p>
+  {% endif %}
+  {% if credential.pending_code %}
+  <div class="mt-4 rounded-md bg-amber-50 border border-amber-200 px-3 py-2 text-sm text-amber-900">
+    🔁 Code <strong class="font-mono">{{ credential.pending_code }}</strong> : {{ credential.pending_attempts }} tentative(s) échouée(s),
+    nouvel essai automatique au prochain cycle.
+  </div>
+  {% endif %}
+  {% if not credential.auto_sign_enabled %}
+  <p class="mt-3 text-sm text-slate-500">Activez <strong>Signature auto</strong> : vos e-mails d'émargement seront détectés et signés automatiquement.</p>
+  {% endif %}
+  {% endif %}
+</section>

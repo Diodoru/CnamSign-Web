@@ -1,0 +1,43 @@
+services:
+  web:
+    build:
+      context: .
+      args:
+        CNAMSIGN_REF: ${CNAMSIGN_REF:-main}
+        CNAMSIGN_CACHEBUST: ${CNAMSIGN_CACHEBUST:-0}
+    image: cnamsign-web:latest
+    container_name: cnamsign-web
+    restart: unless-stopped
+    init: true
+    env_file: .env
+    environment:
+      SECRET_KEY_FILE: /run/secrets/secret_key
+      SECRET_ENCRYPTION_KEY_FILE: /run/secrets/encryption_key
+      CNAMSIGN_PATH: /opt/cnamsign
+      DATA_DIR: /data
+      DATABASE_URL: sqlite:////data/cnamsign.db
+    secrets:
+      - secret_key
+      - encryption_key
+    volumes:
+      - cnamsign-data:/data
+    ports:
+      - "${HOST_PORT:-8000}:8000"
+    shm_size: 512m
+    mem_limit: 2g
+    security_opt:
+      - no-new-privileges:true
+    logging:
+      driver: json-file
+      options:
+        max-size: "10m"
+        max-file: "3"
+
+volumes:
+  cnamsign-data:
+
+secrets:
+  secret_key:
+    file: ./secrets/secret_key
+  encryption_key:
+    file: ./secrets/encryption_key
