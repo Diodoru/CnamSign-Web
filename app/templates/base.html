@@ -1,0 +1,33 @@
+<!doctype html>
+<html lang="fr" class="h-full bg-slate-50">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>{% block title %}{{ app_name }}{% endblock %}</title>
+  <script src="https://cdn.tailwindcss.com/3.4.16"></script>
+  <script src="https://unpkg.com/htmx.org@2.0.4/dist/htmx.min.js"></script>
+  <style>
+    .htmx-request .hide-on-request { display: none; }
+  </style>
+</head>
+{# Le jeton CSRF est envoyé automatiquement avec chaque requête HTMX. #}
+<body class="min-h-full text-slate-800" hx-headers='{"X-CSRF-Token": "{{ csrf_token }}"}'>
+  <header class="bg-white border-b border-slate-200">
+    <div class="max-w-6xl mx-auto px-4 h-14 flex items-center justify-between">
+      <a href="/" class="font-semibold text-indigo-700">{{ app_name }}</a>
+      {% if user %}
+      <div class="flex items-center gap-3 text-sm">
+        <span class="text-slate-500">{{ user.username }}{% if user.is_admin %} · admin{% endif %}</span>
+        <form method="post" action="/logout">
+          <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+          <button class="rounded-md px-3 py-1.5 border border-slate-300 hover:bg-slate-100">Déconnexion</button>
+        </form>
+      </div>
+      {% endif %}
+    </div>
+  </header>
+  <main class="max-w-6xl mx-auto px-4 py-6">
+    {% block content %}{% endblock %}
+  </main>
+</body>
+</html>
