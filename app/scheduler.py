@@ -133,6 +133,7 @@ class SignatureScheduler:
     def _process(self, credential_id: int, source: LogSource) -> None:
         result = self._service.check_and_sign(credential_id)
         status, found_code, message = result["status"], result["code"], result["message"]
+        course_name = result.get("course_name")
         event: LogStatus | None = None
 
         with self._session_factory() as db:
@@ -160,6 +161,7 @@ class SignatureScheduler:
                         status=event,
                         source=source,
                         session_code=found_code,
+                        course_name=course_name,
                         message=message,
                     )
                 )
@@ -169,7 +171,7 @@ class SignatureScheduler:
             )
 
         if event is not None:
-            self._notifier.notify(credential, notification, event, message, found_code)
+            self._notifier.notify(credential, notification, event, message, found_code, course_name)
 
     def _handle_failure(
         self, credential: CnamCredential, found_code: str, email_date: str | None, reason: str

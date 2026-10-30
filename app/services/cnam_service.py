@@ -30,8 +30,11 @@ logger = logging.getLogger(__name__)
 
 WORKER_SCRIPT = Path(__file__).with_name("cnam_worker.py")
 RESULT_PREFIX = "__RESULT__"
-# Variables d'environnement du serveur à ne jamais transmettre au worker.
-_SENSITIVE_ENV_PREFIXES = ("SECRET_", "SMTP_", "DATABASE_URL")
+# Variables d'environnement du serveur à ne jamais transmettre au worker. Les variables
+# Discord de l'upstream sont exclues : les notifications sont envoyées par l'app, par utilisateur.
+_SENSITIVE_ENV_PREFIXES = ("SECRET_", "SMTP_", "DATABASE_URL", "DISCORD_", "STUDENT_NAME")
+# Valeur renvoyée par MailWatcher.extract_subject() quand aucune matière n'est trouvée.
+_UPSTREAM_DEFAULT_SUBJECT = "Émargement Cnam"
 
 
 class CnamWorkerError(RuntimeError):
@@ -98,7 +101,7 @@ class CnamService:
     def check_and_sign(self, credential_id: int) -> dict[str, Any]:
         """Cherche un code de session dans Outlook et émarge automatiquement.
 
-        Retourne `{"status", "code", "email_date", "message"}` où status vaut
+        Retourne `{"status", "code", "email_date", "course_name", "message"}` où status vaut
         SUCCESS, FAILED (code trouvé mais signature refusée), NO_SIGNATURE ou ERROR.
         """
         with self._session_factory() as db:
@@ -116,25 +119,27 @@ class CnamService:
                 folder,
             )
 
+        empty = {"code": None, "email_date": None, "course_name": None}
         try:
             result, stderr = self._run_worker(self.user_workdir(user_id), payload)
         except CnamWorkerError as exc:
-            return {"status": "ERROR", "code": None, "email_date": None, "message": str(exc)}
+            return {"status": "ERROR", **empty, "message": str(exc)}
         finally:
             payload.clear()  # best effort : Python ne permet pas d'effacer une str en mémoire
 
         if "error" in result:
-            return {"status": "ERROR", "code": None, "email_date": None, "message": result["error"]}
+            return {"status": "ERROR", **empty, "message": result["error"]}
 
         found_code = result.get("code")
         if not found_code:
-            return {"status": "NO_SIGNATURE", "code": None, "email_date": None,
-                    "message": "Aucun nouveau code d'émargement dans la boîte mail."}
+            return {"status": "NO_SIGNATURE", **empty, "message": "Aucun nouveau code d'émargement dans la boîte mail."}
+
+        found = {"code": found_code, "email_date": result.get("date"), "course_name": _course_name(result.get("subject"))}
         if result.get("signed"):
-            return {"status": "SUCCESS", "code": found_code, "email_date": result.get("date"),
-                    "message": f"Émargement réussi avec le code {found_code}."}
+            course = f" ({found['course_name']})" if found["course_name"] else ""
+            return {"status": "SUCCESS", **found, "message": f"Émargement réussi avec le code {found_code}{course}."}
         reason = _last_error_line(stderr) or "CnamSignE n'a pas confirmé la signature."
-        return {"status": "FAILED", "code": found_code, "email_date": result.get("date"), "message": reason}
+        return {"status": "FAILED", **found, "message": reason}
 
     def mark_processed(self, credential_id: int, code: str, email_date: str | None) -> None:
         """Indique à l'upstream de ne plus retenter ce code (fichier `processed_codes.txt`)."""
@@ -201,6 +206,12 @@ class CnamService:
         raise CnamWorkerError(
             f"Le worker s'est arrêté sans résultat (code {proc.returncode}) : {_last_error_line(stderr) or 'aucun log'}"
         )
+
+
+def _course_name(subject: str | None) -> str | None:
+    """Normalise la matière renvoyée par l'upstream (None si absente ou valeur par défaut)."""
+    subject = (subject or "").strip()[:255]
+    return subject if subject and subject != _UPSTREAM_DEFAULT_SUBJECT else None
 
 
 def _last_error_line(stderr: str) -> str | None:

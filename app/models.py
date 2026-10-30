@@ -4,7 +4,7 @@ from __future__ import annotations
 import enum
 from datetime import datetime, timezone
 
-from sqlalchemy import Boolean, DateTime, Enum, ForeignKey, Integer, String, Text
+from sqlalchemy import Boolean, DateTime, Enum, ForeignKey, Integer, String, Text, false, true
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from app.database import Base
@@ -96,6 +96,7 @@ class SignatureLog(Base):
     status: Mapped[LogStatus] = mapped_column(Enum(LogStatus, native_enum=False, length=20))
     source: Mapped[LogSource] = mapped_column(Enum(LogSource, native_enum=False, length=10))
     session_code: Mapped[str | None] = mapped_column(String(6), nullable=True)
+    course_name: Mapped[str | None] = mapped_column(String(255), nullable=True)  # extrait du mail par l'upstream
     message: Mapped[str] = mapped_column(Text, default="")
 
     user: Mapped[User] = relationship(back_populates="logs")
@@ -110,5 +111,16 @@ class NotificationSetting(Base):
     # Les e-mails partent vers l'adresse Le Cnam de l'utilisateur (CnamCredential).
     notify_on_success: Mapped[bool] = mapped_column(Boolean, default=True)
     notify_on_failure: Mapped[bool] = mapped_column(Boolean, default=True)
+
+    # Discord : l'URL du webhook suffit pour poster dans le salon, elle est donc chiffrée.
+    # server_default : nécessaire pour ajouter la colonne NOT NULL à une base existante.
+    encrypted_discord_webhook_url: Mapped[str | None] = mapped_column(Text, nullable=True)
+    discord_notify_on_success: Mapped[bool] = mapped_column(Boolean, default=False, server_default=false())
+    discord_notify_on_failure: Mapped[bool] = mapped_column(Boolean, default=False, server_default=false())
+    # Mention <@discord_user_id> dans le message, réglable par type d'événement.
+    discord_user_id: Mapped[str | None] = mapped_column(String(20), nullable=True)
+    discord_mention_on_success: Mapped[bool] = mapped_column(Boolean, default=False, server_default=false())
+    discord_mention_on_failure: Mapped[bool] = mapped_column(Boolean, default=True, server_default=true())
+    student_name: Mapped[str | None] = mapped_column(String(100), nullable=True)
 
     user: Mapped[User] = relationship(back_populates="notification")

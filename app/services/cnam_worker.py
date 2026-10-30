@@ -88,10 +88,12 @@ def action_check_and_sign(payload: dict[str, Any]) -> dict[str, Any]:
     if not code:
         return {"code": None}
     email_date = watcher.last_detected_date
+    # Matière extraite du sujet du mail (upstream ≥ cc5d91d) ; absente sur les versions plus anciennes.
+    subject = getattr(watcher, "last_detected_subject", None)
     signed = CnamSigner().sign(code)
     if signed:
         watcher.mark_as_processed(code, email_date)
-    return {"code": code, "date": email_date, "signed": signed}
+    return {"code": code, "date": email_date, "subject": subject, "signed": signed}
 
 
 def action_mark(payload: dict[str, Any]) -> dict[str, Any]:

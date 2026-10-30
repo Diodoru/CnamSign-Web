@@ -7,6 +7,7 @@ from pathlib import Path
 from sqlalchemy import create_engine, event, inspect, text
 from sqlalchemy.engine import Engine
 from sqlalchemy.orm import DeclarativeBase, Session, sessionmaker
+from sqlalchemy.schema import CreateColumn
 
 from app.config import get_settings
 
@@ -60,7 +61,7 @@ def init_db() -> None:
 
 # Colonnes retirées des modèles (notifications Discord / e-mail libre).
 _DROPPED_COLUMNS = {
-    "notification_settings": ("encrypted_discord_webhook", "email_enabled", "email_to"),
+    "notification_settings": ("encrypted_discord_webhook", "email_enabled", "email_to", "discord_enabled"),
 }
 
 
@@ -72,6 +73,26 @@ def _migrate() -> None:
     """
     inspector = inspect(engine)
     with engine.begin() as conn:
+        # Colonnes ajoutées aux modèles depuis la création de la base (create_all ne les ajoute pas).
+        for table in Base.metadata.sorted_tables:
+            if not inspector.has_table(table.name):
+                continue
+            existing = {col["name"] for col in inspector.get_columns(table.name)}
+            for column in table.columns:
+                if column.name not in existing:
+                    ddl = CreateColumn(column).compile(dialect=engine.dialect)
+                    conn.execute(text(f"ALTER TABLE {table.name} ADD COLUMN {ddl}"))
+
+        # L'interrupteur unique `discord_enabled` est remplacé par des cases par événement :
+        # on reprend son état avant de supprimer la colonne (mention conservée pour les échecs).
+        if inspector.has_table("notification_settings") and "discord_enabled" in {
+            col["name"] for col in inspector.get_columns("notification_settings")
+        }:
+            conn.execute(text(
+                "UPDATE notification_settings SET discord_notify_on_success = discord_enabled, "
+                "discord_notify_on_failure = discord_enabled"
+            ))
+
         for table, columns in _DROPPED_COLUMNS.items():
             if not inspector.has_table(table):
                 continue

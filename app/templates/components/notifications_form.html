@@ -1,47 +1,114 @@
 {# Rechargé après un changement d'identifiants (l'adresse destinataire peut changer). #}
 <section id="notifications-card" hx-get="/partials/notifications" hx-trigger="notifications-refresh from:body"
          hx-swap="outerHTML" class="bg-white rounded-xl shadow-sm border border-slate-200 p-5">
-  <h2 class="font-semibold mb-3">Notifications e-mail</h2>
+  <h2 class="font-semibold mb-3">Notifications</h2>
 
   {% if not notify_recipient %}
   <p class="text-sm text-slate-500">Enregistrez vos identifiants Le Cnam pour activer les notifications.</p>
   {% else %}
   {% set on_success = not notification or notification.notify_on_success %}
   {% set on_failure = not notification or notification.notify_on_failure %}
+  {% set input_cls = "mt-1 w-full rounded-md border border-slate-300 px-3 py-2 focus:outline-none focus:ring-2 focus:ring-indigo-500" %}
 
-  {# Enregistrement immédiat à chaque changement de case. #}
-  <form hx-post="/notifications" hx-trigger="change" hx-target="#notifications-card" hx-swap="outerHTML"
-        class="space-y-2 text-sm">
-    <label class="flex items-start gap-2 cursor-pointer">
-      <input type="checkbox" name="notify_on_success" value="true" class="mt-0.5 rounded border-slate-300"
-             {% if on_success %}checked{% endif %}>
-      <span>Me prévenir par e-mail en cas de signature réussie</span>
-    </label>
-    <label class="flex items-start gap-2 cursor-pointer">
-      <input type="checkbox" name="notify_on_failure" value="true" class="mt-0.5 rounded border-slate-300"
-             {% if on_failure %}checked{% endif %}>
-      <span>Me prévenir par e-mail en cas d'échec de signature</span>
-    </label>
-  </form>
+  <form hx-post="/notifications" hx-target="#notifications-card" hx-swap="outerHTML"
+        hx-disabled-elt="find button[type=submit]" class="space-y-4 text-sm">
 
-  <div class="mt-4 rounded-md px-3 py-2 text-sm break-words
-              {{ 'bg-green-50 border border-green-200 text-green-800' if on_success or on_failure else 'bg-slate-50 border border-slate-200 text-slate-600' }}">
-    {% if on_success or on_failure %}
-    Notifications e-mail actives (envoyées à <strong>{{ notify_recipient }}</strong>)
-    {% else %}
-    Notifications e-mail désactivées
+    {# --- E-mail : les cases s'enregistrent immédiatement --- #}
+    <fieldset class="space-y-2">
+      <legend class="font-medium mb-1">E-mail</legend>
+      <label class="flex items-start gap-2 cursor-pointer">
+        <input type="checkbox" name="notify_on_success" value="true" class="mt-0.5 rounded border-slate-300"
+               onchange="this.form.requestSubmit()" {% if on_success %}checked{% endif %}>
+        <span>Me prévenir par e-mail en cas de signature réussie</span>
+      </label>
+      <label class="flex items-start gap-2 cursor-pointer">
+        <input type="checkbox" name="notify_on_failure" value="true" class="mt-0.5 rounded border-slate-300"
+               onchange="this.form.requestSubmit()" {% if on_failure %}checked{% endif %}>
+        <span>Me prévenir par e-mail en cas d'échec de signature</span>
+      </label>
+      <div class="rounded-md px-3 py-2 break-words
+                  {{ 'bg-green-50 border border-green-200 text-green-800' if on_success or on_failure else 'bg-slate-50 border border-slate-200 text-slate-600' }}">
+        {% if on_success or on_failure %}
+        Notifications e-mail actives (envoyées à <strong>{{ notify_recipient }}</strong>)
+        {% else %}
+        Notifications e-mail désactivées
+        {% endif %}
+      </div>
+      <p class="text-xs text-slate-400">Envoi via {{ smtp_mode }}.</p>
+    </fieldset>
+
+    {# --- Discord --- #}
+    <fieldset class="space-y-3 border-t border-slate-200 pt-4">
+      <legend class="sr-only">Discord</legend>
+      <div class="flex items-center justify-between gap-2">
+        <span class="font-medium">Discord</span>
+        <span class="rounded-full px-2 py-0.5 text-xs {{ 'bg-green-100 text-green-800' if discord_active else 'bg-slate-100 text-slate-500' }}">
+          {{ "Actif" if discord_active else "Inactif" }}
+        </span>
+      </div>
+      <p class="text-xs text-slate-500">Embed avec élève, matière, code et heure (format CnamSign).</p>
+
+      {# Pour chaque événement : envoi Discord + mention @moi (la mention dépend de l'envoi). #}
+      {% for event, label in [("success", "en cas de signature réussie"), ("failure", "en cas d'échec de signature")] %}
+      {% set notify_on = notification and notification["discord_notify_on_" ~ event] %}
+      {% set mention_on = notification and notification["discord_mention_on_" ~ event] %}
+      <div class="space-y-1">
+        <label class="flex items-start gap-2 cursor-pointer">
+          <input type="checkbox" name="discord_notify_on_{{ event }}" value="true" class="mt-0.5 rounded border-slate-300"
+                 onchange="this.closest('div').querySelector('[data-mention]').disabled = !this.checked"
+                 {% if notify_on %}checked{% endif %}>
+          <span>Me prévenir sur Discord {{ label }}</span>
+        </label>
+        <label class="flex items-center gap-2 pl-6 text-xs text-slate-600 cursor-pointer has-[:disabled]:opacity-50">
+          <input type="checkbox" name="discord_mention_on_{{ event }}" value="true" data-mention class="rounded border-slate-300"
+                 {% if mention_on %}checked{% endif %} {% if not notify_on %}disabled{% endif %}>
+          <span>Inclure la mention <span class="font-mono">@moi</span></span>
+        </label>
+      </div>
+      {% endfor %}
+
+      <label class="block">
+        <span>Webhook Discord URL</span>
+        <input name="discord_webhook_url" type="url" autocomplete="off" class="{{ input_cls }}"
+               placeholder="{{ 'Configuré (laisser vide pour conserver)' if discord_configured else 'https://discord.com/api/webhooks/…' }}">
+      </label>
+      {% if discord_configured %}
+      <label class="flex items-center gap-2 text-xs">
+        <input type="checkbox" name="clear_discord_webhook" value="true" class="rounded border-slate-300">
+        <span>Supprimer le webhook enregistré</span>
+      </label>
+      {% endif %}
+
+      <label class="block">
+        <span>ID Utilisateur Discord</span>
+        <input name="discord_user_id" inputmode="numeric" pattern="\d{17,20}" autocomplete="off" class="{{ input_cls }}"
+               value="{{ notification.discord_user_id if notification and notification.discord_user_id else '' }}"
+               placeholder="123456789012345678">
+        <span class="mt-1 block text-xs text-slate-500">Pour vous pinger @vous (cases « Inclure la mention » ci-dessus).</span>
+      </label>
+
+      <label class="block">
+        <span>Nom de l'étudiant <span class="text-slate-400">(optionnel)</span></span>
+        <input name="student_name" maxlength="100" autocomplete="off" class="{{ input_cls }}"
+               value="{{ notification.student_name if notification and notification.student_name else '' }}"
+               placeholder="Déduit de votre e-mail si vide">
+      </label>
+    </fieldset>
+
+    {% if alert_message %}
+    {% with kind=alert_kind, message=alert_message %}{% include "components/alert.html" %}{% endwith %}
     {% endif %}
-  </div>
-  <p class="mt-2 text-xs text-slate-400">Envoi via {{ smtp_mode }}.</p>
 
-  {% if alert_message %}
-  <div class="mt-3">{% with kind=alert_kind, message=alert_message %}{% include "components/alert.html" %}{% endwith %}</div>
-  {% endif %}
-
-  <button hx-post="/notifications/test" hx-target="#notif-result" hx-disabled-elt="this"
-          class="mt-3 rounded-md border border-slate-300 px-3 py-1.5 text-sm hover:bg-slate-100 disabled:opacity-50">
-    Envoyer un e-mail de test
-  </button>
+    <div class="flex flex-wrap items-center gap-2">
+      <button type="submit" class="rounded-md bg-indigo-600 text-white px-4 py-2 font-medium hover:bg-indigo-700 disabled:opacity-50">
+        Enregistrer
+      </button>
+      <button type="button" hx-post="/notifications/test" hx-target="#notif-result" hx-disabled-elt="this"
+              class="rounded-md border border-slate-300 px-3 py-2 hover:bg-slate-100 disabled:opacity-50">
+        Envoyer un test
+      </button>
+    </div>
+  </form>
   <div id="notif-result" class="mt-3"></div>
   {% endif %}
 </section>

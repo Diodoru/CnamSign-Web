@@ -19,6 +19,7 @@ from sqlalchemy import func, select
 from sqlalchemy.orm import Session
 from starlette.middleware.sessions import SessionMiddleware
 
+from app import UPSTREAM_URL, __version__
 from app.config import get_settings
 from app.database import get_db, init_db
 from app.models import CheckStatus, CnamCredential, LogStatus, NotificationSetting, SignatureLog, User, utcnow
@@ -70,6 +71,8 @@ templates.env.globals["STATUS_STYLES"] = {
     "NEVER": ("Jamais vérifié", "bg-slate-100 text-slate-500"),
 }
 templates.env.globals["app_name"] = settings.app_name
+templates.env.globals["app_version"] = __version__
+templates.env.globals["upstream_url"] = UPSTREAM_URL
 
 
 # --- Cycle de vie ------------------------------------------------------------------------
@@ -246,7 +249,14 @@ def _notifications_context(user: User) -> dict[str, Any]:
         f"relais {settings.smtp_host}" if settings.smtp_configured
         else f"{settings.smtp_fallback_host} avec votre compte Le Cnam"
     )
-    return {"notification": user.notification, "notify_recipient": recipient, "smtp_mode": smtp_mode}
+    notification = user.notification
+    return {
+        "notification": notification,
+        "notify_recipient": recipient,
+        "smtp_mode": smtp_mode,
+        "discord_configured": bool(notification and notification.encrypted_discord_webhook_url),
+        "discord_active": Notifier.discord_active(notification),
+    }
 
 
 def _logs_query(db: Session, user: User, status: str, days: int, page: int) -> dict[str, Any]:
@@ -524,32 +534,76 @@ def save_notifications(
     db: DbDep,
     notify_on_success: Annotated[bool, Form()] = False,
     notify_on_failure: Annotated[bool, Form()] = False,
+    discord_notify_on_success: Annotated[bool, Form()] = False,
+    discord_notify_on_failure: Annotated[bool, Form()] = False,
+    discord_mention_on_success: Annotated[bool, Form()] = False,
+    discord_mention_on_failure: Annotated[bool, Form()] = False,
+    discord_webhook_url: Annotated[str, Form()] = "",
+    clear_discord_webhook: Annotated[bool, Form()] = False,
+    discord_user_id: Annotated[str, Form()] = "",
+    student_name: Annotated[str, Form()] = "",
 ) -> HTMLResponse:
-    """Enregistrement automatique à chaque changement de case (hx-trigger="change")."""
-    data = NotificationSettingsIn(notify_on_success=notify_on_success, notify_on_failure=notify_on_failure)
+    def respond(kind: str, message: str) -> HTMLResponse:
+        return render(request, "components/notifications_form.html", **_notifications_context(user),
+                      alert_kind=kind, alert_message=message)
+
+    try:
+        data = NotificationSettingsIn(
+            notify_on_success=notify_on_success,
+            notify_on_failure=notify_on_failure,
+            discord_notify_on_success=discord_notify_on_success,
+            discord_notify_on_failure=discord_notify_on_failure,
+            discord_mention_on_success=discord_mention_on_success,
+            discord_mention_on_failure=discord_mention_on_failure,
+            discord_webhook_url=discord_webhook_url,
+            clear_discord_webhook=clear_discord_webhook,
+            discord_user_id=discord_user_id,
+            student_name=student_name,
+        )
+    except ValidationError as exc:
+        return respond("error", " ; ".join(_validation_messages(exc)))
+
     setting = user.notification
     if setting is None:
         setting = NotificationSetting(user_id=user.id)
         db.add(setting)
+    if data.clear_discord_webhook:
+        setting.encrypted_discord_webhook_url = None
+    elif data.discord_webhook_url:  # champ vide = conserver le webhook déjà enregistré
+        setting.encrypted_discord_webhook_url = get_cipher().encrypt(data.discord_webhook_url)
+    if (data.discord_notify_on_success or data.discord_notify_on_failure) and not setting.encrypted_discord_webhook_url:
+        db.rollback()
+        return respond("error", "Renseignez l'URL du webhook Discord pour activer ces notifications.")
+    if (data.discord_mention_on_success or data.discord_mention_on_failure) and not data.discord_user_id:
+        db.rollback()
+        return respond("error", "Renseignez votre ID utilisateur Discord pour activer la mention @moi.")
     setting.notify_on_success = data.notify_on_success
     setting.notify_on_failure = data.notify_on_failure
+    setting.discord_notify_on_success = data.discord_notify_on_success
+    setting.discord_notify_on_failure = data.discord_notify_on_failure
+    setting.discord_mention_on_success = data.discord_mention_on_success
+    setting.discord_mention_on_failure = data.discord_mention_on_failure
+    setting.discord_user_id = data.discord_user_id
+    setting.student_name = data.student_name
     db.commit()
     db.refresh(user)
-    return render(request, "components/notifications_form.html", **_notifications_context(user),
-                  alert_kind="success", alert_message="Préférences enregistrées.")
+    return respond("success", "Préférences enregistrées.")
 
 
 @app.post("/notifications/test", response_class=HTMLResponse, dependencies=CSRF)
 def test_notifications(
     request: Request, user: UserDep, notifier: Annotated[Notifier, Depends(get_notifier)]
 ) -> HTMLResponse:
-    """Route synchrone : l'envoi SMTP (bloquant) s'exécute dans le threadpool FastAPI."""
+    """Route synchrone : les envois bloquants (SMTP, HTTP) s'exécutent dans le threadpool FastAPI."""
     if user.credential is None:
         return alert(request, "error", "Enregistrez d'abord vos identifiants Le Cnam.")
-    errors = notifier.send_test(user.credential)
+    errors = notifier.send_test(user.credential, user.notification)
     if errors:
         return alert(request, "error", " ; ".join(errors))
-    return alert(request, "success", f"E-mail de test envoyé à {notifier.recipient(user.credential)}.")
+    channels = f"e-mail ({notifier.recipient(user.credential)})"
+    if notifier.discord_active(user.notification):
+        channels += " et Discord"
+    return alert(request, "success", f"Notification de test envoyée par {channels}.")
 
 
 # --- API JSON (authentifiée par la session) ---------------------------------------------------------------

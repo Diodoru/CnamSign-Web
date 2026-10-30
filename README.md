@@ -2,13 +2,14 @@
 
 Interface web multi-utilisateurs pour automatiser et suivre l'émargement sur
 **CnamSignE** (Le Cnam), construite autour du projet
-[ndh51/CnamSign](https://github.com/ndh51/CnamSign) **sans le forker**.
+[ndh51/CnamSign](https://github.com/ndh51/CnamSign).
 
 - FastAPI + Jinja2 + HTMX + Tailwind (CDN), SQLAlchemy/SQLite, APScheduler
 - Un seul conteneur pour tous les utilisateurs
 - Identifiants Le Cnam chiffrés au repos (Fernet), déchiffrés en mémoire uniquement pendant une vérification
 - 100 % automatique : l'utilisateur enregistre ses identifiants + PIN et active « Signature auto »
-- Notifications par e-mail (réussite / échec) envoyées à l'adresse Le Cnam de l'utilisateur
+- Notifications par e-mail (réussite / échec) envoyées à l'adresse Le Cnam de l'utilisateur, et Discord (webhook) en option
+- Historique avec la matière / le cours extrait du mail d'émargement
 
 ## Fonctionnement
 
@@ -59,6 +60,26 @@ Les e-mails (texte + HTML) partent vers l'adresse Le Cnam enregistrée par l'uti
   compte Le Cnam. Microsoft retire progressivement l'authentification SMTP par mot de passe et les
   établissements la désactivent souvent : si l'e-mail de test du dashboard échoue, configurez un relais global.
 
+L'e-mail indique la **matière / le cours**, extrait du mail d'émargement par l'upstream
+(`MailWatcher.extract_subject`). Quand l'upstream ne le trouve pas, « Non spécifiée » est affiché.
+
+## Notifications Discord (optionnel, par utilisateur)
+
+Dans la carte Notifications : URL du webhook (Paramètres du salon › Intégrations › Webhooks), ID utilisateur
+Discord et nom de l'étudiant (sinon déduit de l'e-mail), puis cocher les événements voulus :
+
+| Événement | Message | Options |
+|---|---|---|
+| Signature réussie | embed Élève / Matière / Code / Heure (présentation de l'upstream) | envoi, mention `@moi` |
+| Échec définitif | embed d'alerte + détail de l'erreur | envoi, mention `@moi` |
+
+La mention `<@ID>` n'est ajoutée que si la case « Inclure la mention » de l'événement est cochée
+(elle nécessite l'ID utilisateur Discord). Les autres mentions (`@everyone`, `@here`) sont toujours bloquées.
+
+L'URL du webhook est chiffrée en base (elle suffit pour poster dans le salon). Les variables
+`DISCORD_WEBHOOK_URL`, `DISCORD_USER_ID` et `STUDENT_NAME` de l'upstream ne sont pas utilisées par
+l'application (configuration mono-utilisateur) et ne sont jamais transmises au worker.
+
 ## Prérequis côté Le Cnam (comme pour l'upstream)
 
 - Dans Outlook Web : un dossier `Emargements` + une règle qui y range les mails contenant « émarger » ou « code de session ».
@@ -102,7 +123,7 @@ Ouvrir http://localhost:8000 : **le premier compte créé est administrateur**.
 Tesseract est optionnel en local (utilisé seulement si les touches du clavier PIN ne sont pas reconnues par leur nom).
 Mettre `HEADLESS=false` dans `.env` pour voir le navigateur.
 
-## Déploiement Docker (mini PC)
+## Déploiement Docker
 
 ```bash
 mkdir -p secrets
@@ -132,7 +153,7 @@ Pour figer une version : `CNAMSIGN_REF=<sha ou tag>` dans `.env`. Le commit util
 ## Sécurité
 
 - Mots de passe de l'application : Argon2id.
-- Identifiants Le Cnam et PIN : chiffrés avec Fernet (AES-CBC + HMAC-SHA256).
+- Identifiants Le Cnam, PIN et URL de webhook Discord : chiffrés avec Fernet (AES-CBC + HMAC-SHA256).
 - Sessions : cookie signé `HttpOnly`, `SameSite=Lax` ; jeton CSRF sur toutes les requêtes POST.
 - Limitation des tentatives de connexion (10 échecs / 15 min / IP).
 - Le profil navigateur de chaque utilisateur (cookies SSO) est stocké sur disque dans le volume ; il est effacé

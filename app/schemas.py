@@ -35,9 +35,38 @@ class CnamCredentialIn(BaseModel):
         return value.strip()
 
 
+DISCORD_WEBHOOK_PREFIXES = (
+    "https://discord.com/api/webhooks/",
+    "https://discordapp.com/api/webhooks/",
+    "https://ptb.discord.com/api/webhooks/",
+    "https://canary.discord.com/api/webhooks/",
+)
+
+
 class NotificationSettingsIn(BaseModel):
     notify_on_success: bool = False
     notify_on_failure: bool = False
+    discord_notify_on_success: bool = False
+    discord_notify_on_failure: bool = False
+    discord_mention_on_success: bool = False
+    discord_mention_on_failure: bool = False
+    discord_webhook_url: str | None = Field(default=None, max_length=300)  # vide = inchangé
+    clear_discord_webhook: bool = False
+    discord_user_id: str | None = Field(default=None, pattern=r"^\d{17,20}$")  # « snowflake » Discord
+    student_name: str | None = Field(default=None, max_length=100)
+
+    @field_validator("discord_webhook_url", "discord_user_id", "student_name", mode="before")
+    @classmethod
+    def _blank_to_none(cls, value: str | None) -> str | None:
+        return (value or "").strip() or None
+
+    @field_validator("discord_webhook_url")
+    @classmethod
+    def _check_webhook(cls, value: str | None) -> str | None:
+        # Liste blanche stricte : le serveur ne doit pas pouvoir joindre une URL arbitraire (SSRF).
+        if value and not value.startswith(DISCORD_WEBHOOK_PREFIXES):
+            raise ValueError("URL de webhook Discord invalide (https://discord.com/api/webhooks/...)")
+        return value
 
 
 class StatusOut(BaseModel):
@@ -59,4 +88,5 @@ class SignatureLogOut(BaseModel):
     status: LogStatus
     source: LogSource
     session_code: str | None
+    course_name: str | None
     message: str
