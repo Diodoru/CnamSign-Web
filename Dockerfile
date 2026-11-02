@@ -9,7 +9,7 @@ ENV PYTHONDONTWRITEBYTECODE=1 \
     PLAYWRIGHT_BROWSERS_PATH=/ms-playwright \
     CNAMSIGN_PATH=/opt/cnamsign \
     DATA_DIR=/data \
-    DATABASE_URL=sqlite:////data/cnamsign.db
+    DATABASE_URL=sqlite:////data/cnamsignsign.db
 
 RUN apt-get update \
  && apt-get install -y --no-install-recommends git ca-certificates tesseract-ocr \
@@ -19,9 +19,10 @@ WORKDIR /app
 
 # 1) Dépendances de l'application (changent rarement : couche mise en cache)
 COPY requirements.txt .
+COPY scripts/install_upstream_deps.py scripts/
 RUN pip install -r requirements.txt
 
-# 2) Code upstream CnamSign, intégré tel quel (pas de fork).
+# 2) Code upstream CnamSign (projet d'origine, non renommé), intégré tel quel (pas de fork).
 #    Mise à jour : docker compose build --build-arg CNAMSIGN_CACHEBUST=$(date +%s)
 #    Version figée : --build-arg CNAMSIGN_REF=<sha ou tag>
 ARG CNAMSIGN_REPO=https://github.com/ndh51/CnamSign.git
@@ -32,9 +33,9 @@ RUN echo "cnamsign cache-bust: ${CNAMSIGN_CACHEBUST}" \
  && git -C "${CNAMSIGN_PATH}" checkout --quiet "${CNAMSIGN_REF}" \
  && git -C "${CNAMSIGN_PATH}" rev-parse HEAD > "${CNAMSIGN_PATH}/REVISION" \
  && rm -rf "${CNAMSIGN_PATH}/.git" \
- # Suppression de python-dotenv du requirements CnamSign pour éviter d'écraser la version récente demandée par pydantic-settings
- && sed -i '/python-dotenv/d' "${CNAMSIGN_PATH}/requirements.txt" \
- && pip install -r "${CNAMSIGN_PATH}/requirements.txt" \
+ # Dépendances upstream sauf celles épinglées par l'app (ex. python-dotenv requis >=1.2.2 par pydantic-settings)
+ && python scripts/install_upstream_deps.py "${CNAMSIGN_PATH}/requirements.txt" \
+ && pip check \
  && python -m playwright install --with-deps chromium \
  && rm -rf /var/lib/apt/lists/*
 

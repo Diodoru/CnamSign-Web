@@ -1,0 +1,76 @@
+{#- Surcharge de sqladmin/layout.html (copie de SQLAdmin 0.32.0, à resynchroniser lors d'une mise à jour).
+    Modifications : sidebar en 3 zones (en-tête / onglets / pied ancré en bas, styles dans base.html),
+    titre sur 2 lignes, « Logout » remplacé par « Retour à l'application ». -#}
+{% extends "sqladmin/base.html" %}
+{% from 'sqladmin/_macros.html' import display_menu %}
+{% block body %}
+<div class="wrapper">
+  <aside class="navbar navbar-expand-lg navbar-vertical navbar-expand-md navbar-dark admin-sidebar" data-bs-theme="dark">
+    <div class="container-fluid admin-sidebar-inner">
+      <h1 class="navbar-brand navbar-brand-autodark admin-sidebar-header">
+        <a href="{{ url_for('admin:index') }}" class="admin-brand">
+          <span class="admin-brand-mark">CS</span>
+          <span class="admin-brand-text">
+            <span class="admin-brand-title">{{ app_name }}</span>
+            <span class="admin-brand-sub">Administration</span>
+          </span>
+        </a>
+      </h1>
+      {# navbar-expand-md (au lieu de -sm) : burger sur tout l'affichage mobile < 768px ;
+         au-delà, rendu identique (menu toujours déplié, bouton masqué). #}
+      <nav class="navbar navbar-expand-md shadow-none admin-sidebar-nav" id="navbar-menu"
+        data-sqladmin-menu="{{ admin.base_url }}">
+        <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarSupportedContent"
+          aria-controls="navbarSupportedContent" aria-expanded="false" aria-label="Afficher le menu">
+          <span class="navbar-toggler-icon"></span>
+        </button>
+        <div class="collapse navbar-collapse" id="navbarSupportedContent">
+          {# Mobile uniquement (styles dans base.html) : séparateur sous le titre, visible menu ouvert. #}
+          <hr class="admin-menu-separator">
+          {{ display_menu(admin._menu, request) }}
+          {# Mobile uniquement : le retour à l'application rejoint les onglets du menu burger. #}
+          <a href="/dashboard" class="nav-link admin-back-mobile">
+            <span class="nav-link-icon"><i class="fa-solid fa-arrow-left"></i></span>
+            <span class="nav-link-title">Retour à l'application</span>
+          </a>
+        </div>
+      </nav>
+      {# La session est celle de l'application : on y retourne plutôt que de se déconnecter. #}
+      <div class="admin-sidebar-footer">
+        <a href="/dashboard" class="admin-back">
+          <i class="fa-solid fa-arrow-left"></i>
+          <span>Retour à l'application</span>
+        </a>
+      </div>
+    </div>
+  </aside>
+  <div class="page-wrapper">
+    {% block topbar %}{% endblock %}
+    <div class="container-fluid">
+      <div class="page-header d-print-none">
+        {% block content_header %}
+        <div class="row align-items-center">
+          <div class="col">
+            <h2 class="page-title">{{ title }}</h2>
+            <div class="page-pretitle">{{ subtitle }}</div>
+          </div>
+        </div>
+        {% endblock %}
+      </div>
+    </div>
+    <div class="page-body flex-grow-1">
+      <div class="container-fluid">
+        <div class="row row-deck row-cards">
+          {% block content %} {% endblock %}
+          {% block flash %}
+          {% include 'sqladmin/flash.html' %}
+          {% endblock %}
+          {% block secret_modal %}
+          {% include 'sqladmin/secret_modal.html' %}
+          {% endblock %}
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}

@@ -29,7 +29,7 @@ class Settings(BaseSettings):
     model_config = SettingsConfigDict(env_file=".env", env_file_encoding="utf-8", extra="ignore")
 
     # --- Application -------------------------------------------------------
-    app_name: str = "CnamSign Web"
+    app_name: str = "CnamSignSign-Web"
     app_base_url: str = "http://localhost:8000"  # utilisé dans les liens des notifications
     allow_registration: bool = True  # le tout premier compte peut toujours être créé (admin)
     session_cookie_secure: bool = False  # True derrière HTTPS
@@ -43,7 +43,7 @@ class Settings(BaseSettings):
     secret_encryption_key_file: str | None = None
 
     # --- Stockage ----------------------------------------------------------
-    database_url: str = f"sqlite:///{(BASE_DIR / 'data' / 'cnamsign.db').as_posix()}"
+    database_url: str = f"sqlite:///{(BASE_DIR / 'data' / 'cnamsignsign.db').as_posix()}"
     data_dir: Path = BASE_DIR / "data"  # profils navigateur et captures par utilisateur
     cnamsign_path: Path = BASE_DIR / "vendor" / "CnamSign"  # code upstream (non forké)
     screenshot_retention_days: int = 7

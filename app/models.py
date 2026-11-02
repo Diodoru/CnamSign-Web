@@ -44,6 +44,8 @@ class User(Base):
     username: Mapped[str] = mapped_column(String(32), unique=True, index=True)
     hashed_password: Mapped[str] = mapped_column(String(255))
     is_admin: Mapped[bool] = mapped_column(Boolean, default=False)
+    # Désactivé par un admin : connexion refusée et plus aucune vérification automatique.
+    is_active: Mapped[bool] = mapped_column(Boolean, default=True, server_default=true())
     created_at: Mapped[datetime] = mapped_column(DateTime, default=utcnow)
 
     credential: Mapped[CnamCredential | None] = relationship(
@@ -53,6 +55,9 @@ class User(Base):
         back_populates="user", uselist=False, cascade="all, delete-orphan"
     )
     logs: Mapped[list[SignatureLog]] = relationship(back_populates="user", cascade="all, delete-orphan")
+
+    def __str__(self) -> str:  # affiché par SQLAdmin
+        return self.username
 
 
 class CnamCredential(Base):

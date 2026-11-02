@@ -20,6 +20,7 @@ from sqlalchemy.orm import Session
 from starlette.middleware.sessions import SessionMiddleware
 
 from app import UPSTREAM_URL, __version__
+from app.admin import setup_admin
 from app.config import get_settings
 from app.database import get_db, init_db
 from app.models import CheckStatus, CnamCredential, LogStatus, NotificationSetting, SignatureLog, User, utcnow
@@ -44,7 +45,7 @@ from app.services.cnam_service import CnamService
 from app.services.notifier import Notifier
 
 logging.basicConfig(level=logging.INFO, format="%(asctime)s [%(levelname)s] %(name)s: %(message)s")
-logger = logging.getLogger("cnamsign_web")
+logger = logging.getLogger("cnamsignsign_web")
 
 settings = get_settings()
 LOGS_PAGE_SIZE = 20
@@ -63,12 +64,12 @@ def _localdt(value: datetime | None) -> str:
 
 templates.env.filters["localdt"] = _localdt
 templates.env.globals["STATUS_STYLES"] = {
-    "SUCCESS": ("Signé", "bg-green-100 text-green-800"),
-    "FAILED": ("Échec", "bg-red-100 text-red-800"),
-    "RETRYING": ("Nouvelle tentative", "bg-amber-100 text-amber-800"),
-    "NO_SIGNATURE": ("Rien à signer", "bg-slate-100 text-slate-700"),
-    "ERROR": ("Erreur technique", "bg-red-100 text-red-800"),
-    "NEVER": ("Jamais vérifié", "bg-slate-100 text-slate-500"),
+    "SUCCESS": ("Signé", "bg-green-100 text-green-800 dark:bg-green-900/40 dark:text-green-300"),
+    "FAILED": ("Échec", "bg-cnam-100 text-cnam-800 dark:bg-cnam-900/40 dark:text-cnam-300"),
+    "RETRYING": ("Nouvelle tentative", "bg-amber-100 text-amber-800 dark:bg-amber-900/40 dark:text-amber-300"),
+    "NO_SIGNATURE": ("Rien à signer", "bg-slate-100 text-slate-700 dark:bg-slate-700 dark:text-slate-300"),
+    "ERROR": ("Erreur technique", "bg-cnam-100 text-cnam-800 dark:bg-cnam-900/40 dark:text-cnam-300"),
+    "NEVER": ("Jamais vérifié", "bg-slate-100 text-slate-500 dark:bg-slate-700 dark:text-slate-400"),
 }
 templates.env.globals["app_name"] = settings.app_name
 templates.env.globals["app_version"] = __version__
@@ -99,7 +100,7 @@ app = FastAPI(title=settings.app_name, lifespan=lifespan, docs_url=None, redoc_u
 app.add_middleware(
     SessionMiddleware,
     secret_key=settings.secret_key,
-    session_cookie="cnamsign_session",
+    session_cookie="cnamsignsign_session",
     max_age=settings.session_max_age_hours * 3600,
     same_site="lax",
     https_only=settings.session_cookie_secure,
@@ -113,6 +114,9 @@ async def security_headers(request: Request, call_next):
     response.headers.setdefault("X-Content-Type-Options", "nosniff")
     response.headers.setdefault("Referrer-Policy", "same-origin")
     return response
+
+
+setup_admin(app)  # /admin, réservé aux comptes is_admin (voir app/admin.py)
 
 
 # --- Dépendances ---------------------------------------------------------------------------
@@ -148,7 +152,7 @@ async def verify_csrf(request: Request) -> None:
 def current_user(request: Request, db: Session = Depends(get_db)) -> User:
     user_id = request.session.get("uid")
     user = db.get(User, user_id) if user_id else None
-    if user is None:
+    if user is None or not user.is_active:  # compte supprimé ou désactivé par un admin
         request.session.clear()
         raise LoginRequired()
     return user
@@ -313,6 +317,9 @@ def login(
         login_limiter.record_failure(client_ip)
         return render(request, "login.html", status_code=401, mode="login", registration_open=_registration_open(db),
                       error="Identifiants incorrects.", username=username)
+    if not user.is_active:
+        return render(request, "login.html", status_code=403, mode="login", registration_open=_registration_open(db),
+                      error="Compte désactivé. Contactez un administrateur.", username=username)
 
     if password_needs_rehash(user.hashed_password):
         user.hashed_password = hash_password(password)

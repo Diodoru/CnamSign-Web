@@ -1,0 +1,189 @@
+{#- Surcharge de sqladmin/base.html : thème sombre « EasyAdmin 4 » + accents rouge Cnam, interface en français.
+    Hérite du template d'origine (préfixe sqladmin_original/ fourni par SQLAdmin) : seuls les blocs ci-dessous changent. -#}
+{% extends "sqladmin_original/base.html" %}
+
+{% block head_tail %}
+{{ super() }}
+<script>
+  // Avant le rendu du <body> : mode sombre Tabler et langue, sans flash clair au chargement.
+  document.documentElement.setAttribute("data-bs-theme", "dark");
+  document.documentElement.setAttribute("lang", "fr");
+</script>
+<style>
+  /* Palette inspirée d'EasyAdmin 4, accents rouge Cnam (#e2001a). */
+  :root, [data-bs-theme=dark] {
+    --admin-sidebar: #181f2c;
+    --admin-page: #1e2638;
+    --admin-surface: #253043;
+    --admin-surface-hover: #2c394f;
+    --admin-border: #323f54;
+    --admin-text: #f9fafb;
+    --admin-muted: #9aa5b8;
+    --admin-accent: #e2001a;
+    --admin-accent-hover: #ef4444;
+
+    --tblr-primary: var(--admin-accent);
+    --tblr-primary-rgb: 226, 0, 26;
+    --tblr-primary-darken: #be0016;
+    --tblr-primary-fg: #ffffff;
+    --tblr-link-color: var(--admin-accent-hover);
+    --tblr-link-color-rgb: 239, 68, 68;
+    --tblr-link-hover-color: #f87171;
+  }
+  [data-bs-theme=dark] {
+    --tblr-body-bg: var(--admin-page);
+    --tblr-body-bg-rgb: 30, 38, 56;
+    --tblr-body-color: #e5e7eb;
+    --tblr-emphasis-color: var(--admin-text);
+    --tblr-secondary-color: var(--admin-muted);
+    --tblr-bg-surface: var(--admin-surface);
+    --tblr-bg-surface-secondary: var(--admin-page);
+    --tblr-bg-surface-tertiary: var(--admin-surface-hover);
+    --tblr-secondary-bg: var(--admin-surface);
+    --tblr-tertiary-bg: var(--admin-surface-hover);
+    --tblr-border-color: var(--admin-border);
+    --tblr-border-color-translucent: rgba(50, 63, 84, .9);
+    --tblr-card-bg: var(--admin-surface);
+    --tblr-card-border-color: var(--admin-border);
+    --tblr-table-border-color: var(--admin-border);
+    --tblr-dropdown-bg: var(--admin-surface);
+  }
+
+  body { background-color: var(--admin-page); color: #e5e7eb; }
+  .page-wrapper { background-color: var(--admin-page); }
+
+  /* ---------- Sidebar : en-tête / onglets / pied ancré en bas ---------- */
+  :root { --admin-sidebar-width: 280px; }
+  .admin-sidebar.navbar-vertical { background-color: var(--admin-sidebar) !important; border-right: 1px solid var(--admin-border);
+                                   box-shadow: none; }
+
+  /* En-tête : logo + titre sur 2 lignes */
+  .admin-sidebar .admin-sidebar-header { margin: 0; padding: 1.5rem 1.25rem 1rem 1.25rem; justify-content: flex-start; }
+  .admin-sidebar .admin-sidebar-header a { color: var(--admin-text); text-decoration: none; }
+  .admin-brand { display: flex; align-items: center; gap: .85rem; text-align: left; }
+  .admin-brand-mark { display: grid; place-items: center; width: 2.5rem; height: 2.5rem; border-radius: 8px; flex-shrink: 0;
+                      background: var(--admin-accent); color: #fff; font-size: .85rem; font-weight: 700; letter-spacing: .02em; }
+  .admin-brand-text { display: flex; flex-direction: column; min-width: 0; }
+  .admin-brand-title { font-size: 1.2rem; font-weight: 700; line-height: 1.3; white-space: normal; }
+  .admin-brand-sub { font-size: .875rem; font-weight: 500; line-height: 1.3; opacity: .8; }
+
+  /* Onglets : posés directement sur le fond de la sidebar (le .navbar imbriqué de Tabler a un fond et une bordure) */
+  .admin-sidebar .admin-sidebar-nav { background: transparent !important; border: none !important; box-shadow: none !important;
+                                      min-height: 0; padding: 0; margin-top: 1.75rem; }
+  .admin-sidebar .admin-sidebar-nav .navbar-nav { gap: .5rem; width: 100%; }
+  .admin-sidebar .admin-sidebar-nav .navbar-nav .nav-item { margin: 0 .75rem; }
+  /* Spécificité supérieure à la règle Tabler « .navbar-vertical.navbar-expand-md .navbar-collapse .navbar-nav .nav-link » */
+  .admin-sidebar.navbar-vertical .admin-sidebar-nav .navbar-collapse .navbar-nav .nav-link {
+    padding: .75rem 1rem; font-size: .95rem; font-weight: 500; color: #cbd5e1; border-radius: 8px;
+    transition: background-color .15s ease, color .15s ease;
+  }
+  .admin-sidebar .admin-sidebar-nav .navbar-nav .nav-link-icon { width: 1.25rem; margin-right: .75rem; color: var(--admin-muted); }
+  .admin-sidebar .admin-sidebar-nav .navbar-nav .nav-link:hover { background-color: var(--admin-surface); color: var(--admin-text); }
+  .admin-sidebar .admin-sidebar-nav .navbar-nav .nav-link.active { background-color: rgba(226, 0, 26, .16); color: #fff; }
+  .admin-sidebar .admin-sidebar-nav .navbar-nav .nav-link.active .nav-link-icon { color: var(--admin-accent-hover); }
+  .admin-sidebar .admin-sidebar-nav .nav-item.active::after { display: none; }
+
+  /* Pied : bouton « Retour à l'application » */
+  .admin-sidebar-footer { margin-top: auto; padding: 1.25rem; border-top: 1px solid var(--admin-border); }
+  .admin-back { display: flex; align-items: center; justify-content: center; gap: .6rem; width: 100%; padding: .75rem 1rem;
+                border: 1px solid var(--admin-border); border-radius: 8px; color: #e5e7eb; background: transparent;
+                font-weight: 500; text-decoration: none; transition: background-color .15s ease, border-color .15s ease, color .15s ease; }
+  .admin-back:hover, .admin-back:focus-visible { border-color: var(--admin-accent); background-color: rgba(226, 0, 26, .16);
+                                                 color: #fff; text-decoration: none; outline: none; }
+
+  /* Dès que Tabler fixe la sidebar à gauche (≥ 768px) : largeur accrue et colonne flex pleine hauteur.
+     En dessous, la barre repliable mobile d'origine est conservée. */
+  @media (min-width: 768px) {
+    .admin-sidebar.navbar-vertical { width: var(--admin-sidebar-width) !important; min-width: var(--admin-sidebar-width) !important;
+                                     overflow-y: auto; }
+    .admin-sidebar.navbar-vertical ~ .page-wrapper { margin-left: var(--admin-sidebar-width) !important; }
+    .admin-sidebar .admin-sidebar-inner { display: flex; flex-direction: column; flex-wrap: nowrap; height: 100vh;
+                                          min-height: 100vh; padding: 0; }
+    .admin-sidebar .admin-sidebar-nav { flex: 0 0 auto; }
+  }
+
+  /* Cartes, tableaux, formulaires */
+  .card { background-color: var(--admin-surface); border-color: var(--admin-border); color: var(--admin-text); }
+  .card-header, .card-footer { border-color: var(--admin-border); background-color: transparent; }
+  .table { --tblr-table-bg: transparent; --tblr-table-color: #e5e7eb; }
+  .table thead th { color: var(--admin-muted); background-color: rgba(24, 31, 44, .55); border-color: var(--admin-border); }
+  .table-hover > tbody > tr:hover > * { --tblr-table-hover-bg: var(--admin-surface-hover); }
+  .form-control, .form-select { background-color: var(--admin-page); border-color: var(--admin-border); color: var(--admin-text); }
+  .form-control:focus, .form-select:focus { border-color: var(--admin-accent); box-shadow: 0 0 0 .2rem rgba(226, 0, 26, .25); }
+  .form-check-input:checked { background-color: var(--admin-accent); border-color: var(--admin-accent); }
+  .btn:not(.btn-primary):not(.btn-danger) { border-color: var(--admin-border); }
+  .btn-primary:hover { background-color: var(--admin-accent-hover); }
+  .page-link { background-color: var(--admin-surface); border-color: var(--admin-border); color: #e5e7eb; }
+  .active > .page-link, .page-link.active { background-color: var(--admin-accent); border-color: var(--admin-accent); color: #fff; }
+  .bg-secondary-lt { background-color: rgba(226, 0, 26, .15) !important; }
+  .text-dark { color: var(--admin-text) !important; }
+  .page-title { color: var(--admin-text); }
+  .badge-status-success { background: rgba(34, 197, 94, .15); color: #4ade80; }
+  .badge-status-failed { background: rgba(226, 0, 26, .18); color: #f87171; }
+  /* Barre de recherche : le bouton texte « Effacer » (au lieu du ✕) réduisait le champ ; on élargit sa colonne. */
+  div:has(> .input-group > #search-input) { flex: 1 1 auto; width: auto; max-width: 32rem; margin-left: auto; }
+  #search-input { min-width: 12rem; }
+
+  /* Éléments du menu burger réservés au mobile : jamais affichés sur desktop. */
+  .admin-menu-separator, .admin-back-mobile { display: none; }
+
+  /* ================= MOBILE UNIQUEMENT (< 768px) — le desktop n'est pas concerné ================= */
+  @media (max-width: 767.98px) {
+    /* --- Barre supérieure : titre à gauche, burger à droite, menu déroulant pleine largeur --- */
+    .admin-sidebar .admin-sidebar-inner { display: flex; flex-wrap: wrap; align-items: center; padding: 0 1rem; }
+    .admin-sidebar .admin-sidebar-header { flex: 1 1 auto; min-width: 0; padding: .75rem 0; }
+    .admin-brand-mark { width: 2.25rem; height: 2.25rem; }
+    .admin-brand-title { font-size: 1.1rem; }
+    /* Le <nav> s'efface : son burger et son menu deviennent des éléments de la barre (menu sur toute la largeur). */
+    .admin-sidebar .admin-sidebar-nav { display: contents; }
+    .admin-sidebar .admin-sidebar-nav .navbar-toggler { order: 1; margin-left: .5rem; padding: .5rem; border-color: var(--admin-border); }
+    .admin-sidebar .admin-sidebar-nav .navbar-collapse { order: 2; flex: 0 0 100%; padding-bottom: .75rem; }
+    .admin-sidebar .admin-sidebar-nav .navbar-nav { gap: .25rem; }
+    .admin-sidebar .admin-sidebar-nav .navbar-nav .nav-item { margin: 0; }
+    .admin-sidebar .admin-sidebar-nav .navbar-collapse .nav-link { padding: .75rem 1rem; border-radius: 8px; }
+
+    /* Séparateur juste sous le titre, uniquement menu ouvert (ou en cours d'ouverture/fermeture) */
+    .admin-sidebar .navbar-collapse.show > .admin-menu-separator,
+    .admin-sidebar .navbar-collapse.collapsing > .admin-menu-separator {
+      display: block; margin: 0 0 .75rem; border: 0; border-top: 1px solid var(--admin-border); opacity: 1;
+    }
+    /* Retour à l'application : dans le menu, plus dans la barre */
+    .admin-sidebar-footer { display: none !important; }
+    .admin-sidebar .admin-back-mobile { display: flex; align-items: center; margin-top: .25rem; color: #cbd5e1; }
+    .admin-sidebar .admin-back-mobile:hover { background-color: rgba(226, 0, 26, .16); color: #fff; text-decoration: none; }
+    .admin-sidebar .admin-back-mobile .nav-link-icon { width: 1.25rem; margin-right: .75rem; color: var(--admin-muted); }
+
+    /* --- Contenu : tableau puis filtres, empilés en pleine largeur --- */
+    .page-wrapper .page-header { margin: 0; padding-top: .5rem; min-height: 0; }
+    .page-wrapper .page-body { margin-top: .75rem; }
+    .page-body .container-fluid, .page-header .container-fluid, .page-wrapper > .container-fluid { padding-left: .75rem; padding-right: .75rem; }
+    .d-flex.min-w-0:has(> .filter-sidebar-col) { flex-direction: column; gap: 1rem; }
+    .d-flex.min-w-0:has(> .filter-sidebar-col) > .flex-grow-1 { margin-right: 0 !important; width: 100%; }
+    .filter-sidebar-col { width: 100% !important; max-width: 100% !important; flex: 0 0 auto; position: static !important; float: none !important; }
+    .card { max-width: 100%; }
+    .table-responsive { overflow-x: auto; -webkit-overflow-scrolling: touch; }
+
+    /* Barre d'outils (Actions + recherche) et pied (pagination) : retour à la ligne au lieu de déborder */
+    .card-body .d-flex.justify-content-between:has(#search-input) { flex-wrap: wrap; gap: .75rem; }
+    .card-body .d-flex.justify-content-between:has(#search-input) > .dropdown { width: auto; flex: 0 0 auto; }
+    div:has(> .input-group > #search-input) { flex: 1 1 100%; max-width: 100%; margin-left: 0; }
+    #search-input { min-width: 0; }
+    .card-footer { flex-wrap: wrap; justify-content: center !important; }
+    .card-footer > p { flex: 1 1 100%; text-align: center; }
+    .card-footer .pagination { margin-left: 0 !important; }
+  }
+</style>
+{% endblock %}
+
+{% block tail %}
+{{ super() }}
+<script>
+  // Finitions typographiques françaises sur la barre de recherche (textes non exposés à la traduction).
+  (function () {
+    var input = document.getElementById("search-input");
+    if (input) input.placeholder = input.placeholder.replace(/^([^:]+):\s*/, "$1 : ");
+    var reset = document.getElementById("search-reset");
+    if (reset) { reset.title = "Effacer"; reset.setAttribute("aria-label", "Effacer"); reset.innerHTML = "Effacer"; }
+  })();
+</script>
+{% endblock %}

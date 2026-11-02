@@ -1,4 +1,4 @@
-# CnamSign Web
+# CnamSignSign-Web
 
 Interface web multi-utilisateurs pour automatiser et suivre l'émargement sur
 **CnamSignE** (Le Cnam), construite autour du projet
@@ -10,6 +10,11 @@ Interface web multi-utilisateurs pour automatiser et suivre l'émargement sur
 - 100 % automatique : l'utilisateur enregistre ses identifiants + PIN et active « Signature auto »
 - Notifications par e-mail (réussite / échec) envoyées à l'adresse Le Cnam de l'utilisateur, et Discord (webhook) en option
 - Historique avec la matière / le cours extrait du mail d'émargement
+- Interface aux couleurs du Cnam (rouge `#E2001A`), mode clair / sombre
+- Panneau d'administration `/admin` (SQLAdmin) réservé aux administrateurs
+
+> Le nom **CnamSign** désigne le projet upstream d'origine (dépôt, variables `CNAMSIGN_*`, `/opt/cnamsign`)
+> et **CnamSignE** la plateforme officielle du Cnam : ces noms ne sont volontairement pas renommés.
 
 ## Fonctionnement
 
@@ -113,13 +118,18 @@ la première chiffre, toutes déchiffrent.
 git clone https://github.com/ndh51/CnamSign.git vendor/CnamSign
 python -m venv .venv
 .venv/Scripts/activate          # Windows (Linux/macOS : source .venv/bin/activate)
-pip install -r requirements.txt -r vendor/CnamSign/requirements.txt
+pip install -r requirements.txt
+python scripts/install_upstream_deps.py vendor/CnamSign/requirements.txt
 python -m playwright install chromium
 cp .env.example .env            # puis renseigner SECRET_KEY et SECRET_ENCRYPTION_KEY
 uvicorn app.main:app --reload
 ```
 
 Ouvrir http://localhost:8000 : **le premier compte créé est administrateur**.
+
+`scripts/install_upstream_deps.py` installe les dépendances de l'upstream en ignorant celles que l'application
+épingle déjà (aujourd'hui `python-dotenv`, que l'upstream fixe à 1.0.1 alors que `pydantic-settings` exige ≥ 1.2.2).
+Le Dockerfile utilise le même script.
 Tesseract est optionnel en local (utilisé seulement si les touches du clavier PIN ne sont pas reconnues par leur nom).
 Mettre `HEADLESS=false` dans `.env` pour voir le navigateur.
 
@@ -134,12 +144,20 @@ cp .env.example .env
 docker compose up -d --build
 ```
 
-- Données persistantes : volume `cnamsign-data` (base SQLite + profils navigateur).
+- Données persistantes : volume `cnamsignsign-data` (base SQLite + profils navigateur).
 - Clés : `./secrets/` sur l'hôte, montées en lecture seule dans `/run/secrets/`.
 - Un seul worker uvicorn (le planificateur tourne dans le processus) : ne pas augmenter `--workers`.
 - Derrière un reverse proxy HTTPS : `SESSION_COOKIE_SECURE=true` et `APP_BASE_URL=https://...`.
 - RAM : prévoir ~400 Mo par Chromium actif. `MAX_CONCURRENT_JOBS=1` sérialise les vérifications ;
   avec un intervalle de 5 min et ~45 s par vérification, comptez une dizaine d'utilisateurs par job simultané.
+
+### Migration depuis CnamSign-Web (ancien nom)
+
+- **Base SQLite** : `/data/cnamsign.db` est renommée automatiquement en `cnamsignsign.db` au premier démarrage.
+- **Volume Docker** : le nouveau nom crée un volume vide. Pour conserver vos données, retrouvez l'ancien volume
+  (`docker volume ls | grep cnamsign-data`, souvent `cnamsign-web_cnamsign-data`) et indiquez-le dans `.env` :
+  `DATA_VOLUME_NAME=cnamsign-web_cnamsign-data`.
+- **Sessions** : le cookie change de nom, chaque utilisateur doit se reconnecter une fois.
 
 ### Mettre à jour le code CnamSign upstream
 
@@ -159,6 +177,38 @@ Pour figer une version : `CNAMSIGN_REF=<sha ou tag>` dans `.env`. Le commit util
 - Le profil navigateur de chaque utilisateur (cookies SSO) est stocké sur disque dans le volume ; il est effacé
   quand l'utilisateur change ou supprime ses identifiants.
 - Les captures d'écran de l'upstream sont purgées après `SCREENSHOT_RETENTION_DAYS` jours.
+
+## Administration (`/admin`)
+
+Bouton « Administration » dans l'en-tête, visible uniquement des comptes `is_admin`. Le panneau réutilise la
+session web : un visiteur non connecté est renvoyé vers `/login`, un utilisateur non admin reçoit un **403**.
+
+- Liste des utilisateurs : ID, identifiant, actif, admin, création, dernière vérification ; recherche par
+  identifiant, filtres Admin / Actif.
+- Seuls `is_active` et `is_admin` sont modifiables ; un compte désactivé ne peut plus se connecter et n'est plus
+  vérifié automatiquement. Un admin ne peut pas se retirer ses propres droits ni supprimer son compte.
+- Jamais affichés : hash du mot de passe, identifiants Le Cnam, PIN, webhook (chiffrés, jamais déchiffrés ici).
+- **Émargements** : historique de tous les utilisateurs (lecture seule, exportable), du plus récent au plus
+  ancien ; recherche par matière, code ou identifiant, filtre Succès / Échec.
+- `/admin` ouvre directement la liste des utilisateurs ; « Retour à l'application » ramène au tableau de bord.
+
+Interface en français, thème sombre (palette EasyAdmin 4, accents rouge Cnam), dates « 30 oct. 2026 à 11:51 »
+à l'heure de `TIMEZONE`. Personnalisation sans modifier le paquet SQLAdmin :
+
+| Élément | Fichier |
+|---|---|
+| Traduction française (SQLAdmin n'en fournit pas) | `app/admin_i18n/fr.po`, compilé en mémoire au démarrage |
+| Thème sombre, accents rouges | `app/templates/admin/sqladmin/base.html` (hérite du template d'origine) |
+| Sidebar : titre sur 2 lignes, lien de retour | `app/templates/admin/sqladmin/layout.html` (copie de SQLAdmin 0.32.0) |
+| Libellés des filtres (Tous / Oui / Non) | `app/templates/admin/sqladmin/filters/lookup_filter.html` |
+
+`sqladmin` est épinglé : lors d'une montée de version, comparer `layout.html` avec l'original et
+`fr.po` avec `sqladmin/translations/admin.pot`.
+
+## Thème
+
+Bouton soleil / lune dans l'en-tête. Le choix est mémorisé dans le navigateur (`localStorage`) ; sans choix,
+le thème du système est suivi. Le thème est appliqué par un script dans `<head>` avant l'affichage (pas de flash).
 
 ## API JSON
 

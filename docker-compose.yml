@@ -3,10 +3,11 @@ services:
     build:
       context: .
       args:
+        # Référence du code upstream CnamSign (projet d'origine, nom conservé)
         CNAMSIGN_REF: ${CNAMSIGN_REF:-main}
         CNAMSIGN_CACHEBUST: ${CNAMSIGN_CACHEBUST:-0}
-    image: cnamsign-web:latest
-    container_name: cnamsign-web
+    image: cnamsignsign-web:latest
+    container_name: cnamsignsign-web
     restart: unless-stopped
     init: true
     env_file: .env
@@ -15,12 +16,13 @@ services:
       SECRET_ENCRYPTION_KEY_FILE: /run/secrets/encryption_key
       CNAMSIGN_PATH: /opt/cnamsign
       DATA_DIR: /data
-      DATABASE_URL: sqlite:////data/cnamsign.db
+      # Une ancienne base /data/cnamsign.db est renommée automatiquement au démarrage.
+      DATABASE_URL: sqlite:////data/cnamsignsign.db
     secrets:
       - secret_key
       - encryption_key
     volumes:
-      - cnamsign-data:/data
+      - cnamsignsign-data:/data
     ports:
       - "${HOST_PORT:-8000}:8000"
     shm_size: 512m
@@ -34,7 +36,9 @@ services:
         max-file: "3"
 
 volumes:
-  cnamsign-data:
+  cnamsignsign-data:
+    # Migration depuis l'ancien nom : DATA_VOLUME_NAME=<ancien volume> dans .env (voir README).
+    name: ${DATA_VOLUME_NAME:-cnamsignsign-data}
 
 secrets:
   secret_key:

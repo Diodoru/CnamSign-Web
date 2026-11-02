@@ -1,33 +1,131 @@
 <!doctype html>
-<html lang="fr" class="h-full bg-slate-50">
+<html lang="fr" class="h-full">
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>{% block title %}{{ app_name }}{% endblock %}</title>
-  <script src="https://cdn.tailwindcss.com/3.4.16"></script>
-  <script src="https://unpkg.com/htmx.org@2.0.4/dist/htmx.min.js"></script>
+  {# Anti-FOUC : thème appliqué avant tout rendu (préférence enregistrée, sinon thème système). #}
+  <script>
+    (function () {
+      var stored = null;
+      try { stored = localStorage.getItem("theme"); } catch (e) {}
+      var dark = stored ? stored === "dark" : window.matchMedia("(prefers-color-scheme: dark)").matches;
+      document.documentElement.classList.toggle("dark", dark);
+      document.documentElement.style.colorScheme = dark ? "dark" : "light";
+    })();
+  </script>
+  {# Fond posé en CSS brut : visible avant que le CDN Tailwind n'ait compilé ses classes. #}
   <style>
+    html { background: #f8fafc; color: #1e293b; }
+    html.dark { background: #0f172a; color: #cbd5e1; }
     .htmx-request .hide-on-request { display: none; }
   </style>
+  <script src="https://cdn.tailwindcss.com/3.4.16"></script>
+  <script>
+    tailwind.config = {
+      darkMode: "class",
+      theme: {
+        extend: {
+          colors: {
+            // Rouge Cnam (#E2001A) et ses déclinaisons
+            cnam: {
+              50: "#fff1f2", 100: "#ffe1e4", 200: "#ffc7cd", 300: "#ff9ca7", 400: "#ff5f72",
+              500: "#f92d45", 600: "#e2001a", 700: "#be0016", 800: "#9d0517", 900: "#830a18",
+            },
+          },
+        },
+      },
+    };
+  </script>
+  <style type="text/tailwindcss">
+    @layer components {
+      .card { @apply bg-white border border-slate-200 rounded-xl shadow-sm p-5 dark:bg-slate-800 dark:border-slate-700 dark:shadow-none; }
+      .card-title { @apply font-semibold text-slate-900 dark:text-slate-100; }
+      .muted { @apply text-slate-500 dark:text-slate-400; }
+      .faint { @apply text-slate-400 dark:text-slate-500; }
+      .input {
+        @apply mt-1 w-full rounded-md border border-slate-300 bg-white px-3 py-2 text-slate-900 placeholder:text-slate-400
+               focus:outline-none focus:ring-2 focus:ring-cnam-600 focus:border-cnam-600
+               dark:bg-slate-900 dark:border-slate-700 dark:text-slate-100 dark:placeholder:text-slate-500
+               dark:focus:ring-cnam-500 dark:focus:border-cnam-500;
+      }
+      .select { @apply rounded-md border border-slate-300 bg-white px-2 py-1 dark:bg-slate-900 dark:border-slate-700 dark:text-slate-200; }
+      .checkbox {
+        @apply rounded border-slate-300 text-cnam-600 focus:ring-cnam-600
+               dark:bg-slate-900 dark:border-slate-600 dark:text-cnam-500 dark:focus:ring-cnam-500 dark:focus:ring-offset-slate-800;
+      }
+      .btn-primary {
+        @apply rounded-md bg-cnam-600 px-4 py-2 font-medium text-white hover:bg-cnam-700
+               focus:outline-none focus-visible:ring-2 focus-visible:ring-cnam-600 focus-visible:ring-offset-2
+               disabled:opacity-50 dark:bg-cnam-600 dark:hover:bg-cnam-500 dark:focus-visible:ring-offset-slate-800;
+      }
+      .btn-secondary {
+        @apply rounded-md border border-slate-300 px-3 py-1.5 text-slate-700 hover:bg-slate-100 hover:border-cnam-600 hover:text-cnam-700
+               focus:outline-none focus-visible:ring-2 focus-visible:ring-cnam-600 disabled:opacity-50
+               dark:border-slate-600 dark:text-slate-200 dark:hover:bg-slate-700 dark:hover:border-cnam-500 dark:hover:text-cnam-400;
+      }
+      .link { @apply text-cnam-700 underline-offset-2 hover:underline dark:text-cnam-400; }
+      .divider { @apply border-slate-200 dark:border-slate-700; }
+    }
+  </style>
+  <script src="https://unpkg.com/htmx.org@2.0.4/dist/htmx.min.js"></script>
 </head>
 {# Le jeton CSRF est envoyé automatiquement avec chaque requête HTMX. #}
-<body class="min-h-full text-slate-800" hx-headers='{"X-CSRF-Token": "{{ csrf_token }}"}'>
-  <header class="bg-white border-b border-slate-200">
-    <div class="max-w-6xl mx-auto px-4 h-14 flex items-center justify-between">
-      <a href="/" class="font-semibold text-indigo-700">{{ app_name }}</a>
-      {% if user %}
-      <div class="flex items-center gap-3 text-sm">
-        <span class="text-slate-500">{{ user.username }}{% if user.is_admin %} · admin{% endif %}</span>
+<body class="min-h-full bg-slate-50 text-slate-800 dark:bg-slate-900 dark:text-slate-300 transition-colors"
+      hx-headers='{"X-CSRF-Token": "{{ csrf_token }}"}'>
+  <header class="bg-white border-b border-slate-200 dark:bg-slate-800 dark:border-slate-700">
+    <div class="h-1 bg-cnam-600"></div>
+    <div class="max-w-6xl mx-auto px-4 h-14 flex items-center justify-between gap-3">
+      <a href="/" class="flex items-center gap-2 font-semibold text-slate-900 dark:text-slate-100">
+        <span class="grid h-7 w-7 place-items-center rounded-md bg-cnam-600 text-xs font-bold text-white">CS</span>
+        <span class="hidden sm:inline">{{ app_name }}</span>
+      </a>
+      <div class="flex items-center gap-2 text-sm">
+        {% if user %}
+        <span class="hidden sm:inline muted">{{ user.username }}</span>
+        {% if user.is_admin %}
+        <a href="/admin/" class="btn-secondary">Administration</a>
+        {% endif %}
+        {% endif %}
+        <button type="button" onclick="toggleTheme()" class="btn-secondary px-2" aria-label="Basculer le thème clair / sombre"
+                title="Thème clair / sombre">
+          {# Lune en mode clair, soleil en mode sombre #}
+          <svg class="h-5 w-5 dark:hidden" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
+            <path stroke-linecap="round" stroke-linejoin="round" d="M21 12.79A9 9 0 1111.21 3 7 7 0 0021 12.79z"/>
+          </svg>
+          <svg class="hidden h-5 w-5 dark:block" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
+            <circle cx="12" cy="12" r="4"/>
+            <path stroke-linecap="round" d="M12 2v2m0 16v2M4.93 4.93l1.41 1.41m11.32 11.32l1.41 1.41M2 12h2m16 0h2M4.93 19.07l1.41-1.41m11.32-11.32l1.41-1.41"/>
+          </svg>
+        </button>
+        {% if user %}
         <form method="post" action="/logout">
           <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
-          <button class="rounded-md px-3 py-1.5 border border-slate-300 hover:bg-slate-100">Déconnexion</button>
+          <button class="btn-secondary">Déconnexion</button>
         </form>
+        {% endif %}
       </div>
-      {% endif %}
     </div>
   </header>
   <main class="max-w-6xl mx-auto px-4 py-6">
     {% block content %}{% endblock %}
   </main>
+  <script>
+    function applyTheme(dark) {
+      document.documentElement.classList.toggle("dark", dark);
+      document.documentElement.style.colorScheme = dark ? "dark" : "light";
+    }
+    function toggleTheme() {
+      var dark = !document.documentElement.classList.contains("dark");
+      applyTheme(dark);
+      try { localStorage.setItem("theme", dark ? "dark" : "light"); } catch (e) {}
+    }
+    // Suit le thème système tant que l'utilisateur n'a pas fait de choix explicite.
+    window.matchMedia("(prefers-color-scheme: dark)").addEventListener("change", function (e) {
+      var stored = null;
+      try { stored = localStorage.getItem("theme"); } catch (err) {}
+      if (!stored) applyTheme(e.matches);
+    });
+  </script>
 </body>
 </html>
