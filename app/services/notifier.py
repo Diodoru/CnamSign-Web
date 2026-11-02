@@ -124,7 +124,7 @@ class Notifier:
     def send_test(self, credential: CnamCredential, setting: NotificationSetting | None) -> list[str]:
         """Envoie un message de test sur chaque canal configuré."""
         errors = self._send_email(credential, "🔔 Test de notification",
-                                  f"Vos notifications {self._settings.app_name} fonctionnent.", "#4f46e5", [])
+                                  f"Vos notifications {self._settings.app_name} fonctionnent.", "#E2001A", [])
         if self.discord_active(setting):
             errors += self._send_discord(credential, setting, LogStatus.SUCCESS, "000000", "Test de notification",
                                          error_message=None, is_test=True)
@@ -285,7 +285,7 @@ class Notifier:
         <p style="margin:0 0 16px;line-height:1.5">{e(message)}</p>
         <table role="presentation" cellpadding="0" cellspacing="0" style="margin-bottom:20px">{rows}</table>
         <a href="{e(self.dashboard_url)}"
-           style="display:inline-block;background:#4f46e5;color:#ffffff;text-decoration:none;padding:10px 16px;border-radius:6px">
+           style="display:inline-block;background:#E2001A;color:#ffffff;text-decoration:none;padding:10px 16px;border-radius:6px">
           Ouvrir le tableau de bord</a>
       </td></tr>
     </table>

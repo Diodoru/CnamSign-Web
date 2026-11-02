@@ -7,17 +7,17 @@
     {% include "components/status.html" %}
     <div id="action-result"></div>
 
-    <section class="bg-white rounded-xl shadow-sm border border-slate-200 p-5">
+    <section class="card">
       <div class="flex flex-wrap items-center justify-between gap-3 mb-4">
-        <h2 class="font-semibold">Historique des signatures</h2>
+        <h2 class="card-title">Historique des signatures</h2>
         <form id="log-filters" hx-get="/partials/logs" hx-target="#logs-table" hx-trigger="change"
               class="flex gap-2 text-sm">
-          <select name="status" class="rounded-md border border-slate-300 px-2 py-1">
+          <select name="status" class="select" aria-label="Filtrer par statut">
             <option value="">Tous les statuts</option>
             <option value="SUCCESS">Signé</option>
             <option value="FAILED">Échec</option>
           </select>
-          <select name="days" class="rounded-md border border-slate-300 px-2 py-1">
+          <select name="days" class="select" aria-label="Période">
             <option value="1">24 h</option>
             <option value="7">7 jours</option>
             <option value="30" selected>30 jours</option>
@@ -27,7 +27,7 @@
       </div>
       <div id="logs-table" hx-get="/partials/logs" hx-include="#log-filters"
            hx-trigger="load, every 30s, status-refresh from:body">
-        <p class="text-sm text-slate-400">Chargement…</p>
+        <p class="text-sm faint">Chargement…</p>
       </div>
     </section>
   </div>
@@ -35,16 +35,16 @@
   <div class="space-y-6">
     {% include "components/credentials_form.html" %}
     {% include "components/notifications_form.html" %}
-    <p class="text-xs text-slate-400 px-1">
+    <p class="text-xs faint px-1">
       Vérifications automatiques : {{ schedule if scheduler_enabled else "désactivées sur cette instance" }}.
     </p>
   </div>
 </div>
 
-<footer class="mt-10 pb-2 text-center text-xs text-slate-400">
+<footer class="mt-10 pb-2 text-center text-xs text-slate-400 dark:text-slate-500">
   Propulsé par le projet open-source
   <a href="{{ upstream_url }}" target="_blank" rel="noopener noreferrer"
-     class="underline decoration-slate-300 hover:text-slate-600">CnamSign</a>
+     class="underline decoration-slate-300 hover:text-slate-600 dark:decoration-slate-600 dark:hover:text-slate-300">CnamSign</a>
   • {{ app_name }} v{{ app_version }}
 </footer>
 {% endblock %}

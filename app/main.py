@@ -63,12 +63,12 @@ def _localdt(value: datetime | None) -> str:
 
 templates.env.filters["localdt"] = _localdt
 templates.env.globals["STATUS_STYLES"] = {
-    "SUCCESS": ("Signé", "bg-green-100 text-green-800"),
-    "FAILED": ("Échec", "bg-red-100 text-red-800"),
-    "RETRYING": ("Nouvelle tentative", "bg-amber-100 text-amber-800"),
-    "NO_SIGNATURE": ("Rien à signer", "bg-slate-100 text-slate-700"),
-    "ERROR": ("Erreur technique", "bg-red-100 text-red-800"),
-    "NEVER": ("Jamais vérifié", "bg-slate-100 text-slate-500"),
+    "SUCCESS": ("Signé", "bg-green-100 text-green-800 dark:bg-green-900/40 dark:text-green-300"),
+    "FAILED": ("Échec", "bg-cnam-100 text-cnam-800 dark:bg-cnam-900/40 dark:text-cnam-300"),
+    "RETRYING": ("Nouvelle tentative", "bg-amber-100 text-amber-800 dark:bg-amber-900/40 dark:text-amber-300"),
+    "NO_SIGNATURE": ("Rien à signer", "bg-slate-100 text-slate-700 dark:bg-slate-700 dark:text-slate-300"),
+    "ERROR": ("Erreur technique", "bg-cnam-100 text-cnam-800 dark:bg-cnam-900/40 dark:text-cnam-300"),
+    "NEVER": ("Jamais vérifié", "bg-slate-100 text-slate-500 dark:bg-slate-700 dark:text-slate-400"),
 }
 templates.env.globals["app_name"] = settings.app_name
 templates.env.globals["app_version"] = __version__

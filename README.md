@@ -10,6 +10,7 @@ Interface web multi-utilisateurs pour automatiser et suivre l'émargement sur
 - 100 % automatique : l'utilisateur enregistre ses identifiants + PIN et active « Signature auto »
 - Notifications par e-mail (réussite / échec) envoyées à l'adresse Le Cnam de l'utilisateur, et Discord (webhook) en option
 - Historique avec la matière / le cours extrait du mail d'émargement
+- Interface aux couleurs du Cnam (rouge `#E2001A`), mode clair / sombre
 
 > Le nom **CnamSign** désigne le projet upstream d'origine (dépôt, variables `CNAMSIGN_*`, `/opt/cnamsign`)
 > et **CnamSignE** la plateforme officielle du Cnam : ces noms ne sont volontairement pas renommés.
@@ -175,6 +176,11 @@ Pour figer une version : `CNAMSIGN_REF=<sha ou tag>` dans `.env`. Le commit util
 - Le profil navigateur de chaque utilisateur (cookies SSO) est stocké sur disque dans le volume ; il est effacé
   quand l'utilisateur change ou supprime ses identifiants.
 - Les captures d'écran de l'upstream sont purgées après `SCREENSHOT_RETENTION_DAYS` jours.
+
+## Thème
+
+Bouton soleil / lune dans l'en-tête. Le choix est mémorisé dans le navigateur (`localStorage`) ; sans choix,
+le thème du système est suivi. Le thème est appliqué par un script dans `<head>` avant l'affichage (pas de flash).
 
 ## API JSON
 
