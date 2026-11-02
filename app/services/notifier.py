@@ -124,7 +124,7 @@ class Notifier:
     def send_test(self, credential: CnamCredential, setting: NotificationSetting | None) -> list[str]:
         """Envoie un message de test sur chaque canal configuré."""
         errors = self._send_email(credential, "🔔 Test de notification",
-                                  "Vos notifications CnamSign Web fonctionnent.", "#4f46e5", [])
+                                  f"Vos notifications {self._settings.app_name} fonctionnent.", "#4f46e5", [])
         if self.discord_active(setting):
             errors += self._send_discord(credential, setting, LogStatus.SUCCESS, "000000", "Test de notification",
                                          error_message=None, is_test=True)
@@ -153,7 +153,7 @@ class Notifier:
     ) -> dict:
         title, color, description = _DISCORD_TEMPLATES[status]
         if is_test:
-            title, description = "🔔 Test de notification", "Vos notifications Discord CnamSign Web fonctionnent."
+            title, description = "🔔 Test de notification", f"Vos notifications Discord {self._settings.app_name} fonctionnent."
         now = datetime.now(timezone.utc)
         fields = [
             {"name": "👤 Élève", "value": self._student_name(credential, setting), "inline": True},

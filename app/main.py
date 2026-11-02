@@ -44,7 +44,7 @@ from app.services.cnam_service import CnamService
 from app.services.notifier import Notifier
 
 logging.basicConfig(level=logging.INFO, format="%(asctime)s [%(levelname)s] %(name)s: %(message)s")
-logger = logging.getLogger("cnamsign_web")
+logger = logging.getLogger("cnamsignsign_web")
 
 settings = get_settings()
 LOGS_PAGE_SIZE = 20
@@ -99,7 +99,7 @@ app = FastAPI(title=settings.app_name, lifespan=lifespan, docs_url=None, redoc_u
 app.add_middleware(
     SessionMiddleware,
     secret_key=settings.secret_key,
-    session_cookie="cnamsign_session",
+    session_cookie="cnamsignsign_session",
     max_age=settings.session_max_age_hours * 3600,
     same_site="lax",
     https_only=settings.session_cookie_secure,

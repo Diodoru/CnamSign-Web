@@ -9,7 +9,7 @@ ENV PYTHONDONTWRITEBYTECODE=1 \
     PLAYWRIGHT_BROWSERS_PATH=/ms-playwright \
     CNAMSIGN_PATH=/opt/cnamsign \
     DATA_DIR=/data \
-    DATABASE_URL=sqlite:////data/cnamsign.db
+    DATABASE_URL=sqlite:////data/cnamsignsign.db
 
 RUN apt-get update \
  && apt-get install -y --no-install-recommends git ca-certificates tesseract-ocr \
@@ -22,7 +22,7 @@ COPY requirements.txt .
 COPY scripts/install_upstream_deps.py scripts/
 RUN pip install -r requirements.txt
 
-# 2) Code upstream CnamSign, intégré tel quel (pas de fork).
+# 2) Code upstream CnamSign (projet d'origine, non renommé), intégré tel quel (pas de fork).
 #    Mise à jour : docker compose build --build-arg CNAMSIGN_CACHEBUST=$(date +%s)
 #    Version figée : --build-arg CNAMSIGN_REF=<sha ou tag>
 ARG CNAMSIGN_REPO=https://github.com/ndh51/CnamSign.git

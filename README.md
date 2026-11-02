@@ -1,4 +1,4 @@
-# CnamSign Web
+# CnamSignSign-Web
 
 Interface web multi-utilisateurs pour automatiser et suivre l'émargement sur
 **CnamSignE** (Le Cnam), construite autour du projet
@@ -10,6 +10,9 @@ Interface web multi-utilisateurs pour automatiser et suivre l'émargement sur
 - 100 % automatique : l'utilisateur enregistre ses identifiants + PIN et active « Signature auto »
 - Notifications par e-mail (réussite / échec) envoyées à l'adresse Le Cnam de l'utilisateur, et Discord (webhook) en option
 - Historique avec la matière / le cours extrait du mail d'émargement
+
+> Le nom **CnamSign** désigne le projet upstream d'origine (dépôt, variables `CNAMSIGN_*`, `/opt/cnamsign`)
+> et **CnamSignE** la plateforme officielle du Cnam : ces noms ne sont volontairement pas renommés.
 
 ## Fonctionnement
 
@@ -139,12 +142,20 @@ cp .env.example .env
 docker compose up -d --build
 ```
 
-- Données persistantes : volume `cnamsign-data` (base SQLite + profils navigateur).
+- Données persistantes : volume `cnamsignsign-data` (base SQLite + profils navigateur).
 - Clés : `./secrets/` sur l'hôte, montées en lecture seule dans `/run/secrets/`.
 - Un seul worker uvicorn (le planificateur tourne dans le processus) : ne pas augmenter `--workers`.
 - Derrière un reverse proxy HTTPS : `SESSION_COOKIE_SECURE=true` et `APP_BASE_URL=https://...`.
 - RAM : prévoir ~400 Mo par Chromium actif. `MAX_CONCURRENT_JOBS=1` sérialise les vérifications ;
   avec un intervalle de 5 min et ~45 s par vérification, comptez une dizaine d'utilisateurs par job simultané.
+
+### Migration depuis CnamSign-Web (ancien nom)
+
+- **Base SQLite** : `/data/cnamsign.db` est renommée automatiquement en `cnamsignsign.db` au premier démarrage.
+- **Volume Docker** : le nouveau nom crée un volume vide. Pour conserver vos données, retrouvez l'ancien volume
+  (`docker volume ls | grep cnamsign-data`, souvent `cnamsign-web_cnamsign-data`) et indiquez-le dans `.env` :
+  `DATA_VOLUME_NAME=cnamsign-web_cnamsign-data`.
+- **Sessions** : le cookie change de nom, chaque utilisateur doit se reconnecter une fois.
 
 ### Mettre à jour le code CnamSign upstream
 

@@ -1,6 +1,7 @@
 """Configuration SQLAlchemy (SQLite par défaut, PostgreSQL possible via DATABASE_URL)."""
 from __future__ import annotations
 
+import logging
 from collections.abc import Iterator
 from pathlib import Path
 
@@ -52,11 +53,30 @@ def init_db() -> None:
     settings.data_dir.mkdir(parents=True, exist_ok=True)
     if _is_sqlite and engine.url.database:
         Path(engine.url.database).parent.mkdir(parents=True, exist_ok=True)
+        _rename_legacy_sqlite(Path(engine.url.database))
 
     from app import models  # noqa: F401  (enregistre les modèles sur Base.metadata)
 
     Base.metadata.create_all(bind=engine)
     _migrate()
+
+
+_LEGACY_SQLITE_NAME = "cnamsign.db"  # nom avant le renommage en CnamSignSign-Web
+
+
+def _rename_legacy_sqlite(target: Path) -> None:
+    """Reprend une base créée sous l'ancien nom (même dossier) au lieu d'en créer une vide.
+
+    Appelée avant toute connexion : le moteur SQLAlchemy ne s'est pas encore connecté.
+    """
+    legacy = target.with_name(_LEGACY_SQLITE_NAME)
+    if target.exists() or target == legacy or not legacy.exists():
+        return
+    for suffix in ("", "-wal", "-shm"):  # fichiers du journal WAL inclus
+        source = legacy.with_name(legacy.name + suffix)
+        if source.exists():
+            source.rename(target.with_name(target.name + suffix))
+    logging.getLogger(__name__).warning("Base SQLite %s renommée en %s", legacy.name, target.name)
 
 
 # Colonnes retirées des modèles (notifications Discord / e-mail libre).
