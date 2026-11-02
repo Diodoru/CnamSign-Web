@@ -45,7 +45,17 @@ RUN useradd --create-home --uid 1000 app \
  && chown -R app:app /data /ms-playwright
 
 COPY --chown=app:app app ./app
+COPY --chown=app:app scripts/check_build.py scripts/
 USER app
+
+# Échoue au build si un template, une traduction ou une ressource de /admin manque (lancé hors de /app :
+# vérifie aussi que les chemins ne dépendent pas du répertoire courant).
+RUN cd / && python /app/scripts/check_build.py
+
+# Derrière un reverse proxy HTTPS, uvicorn (--proxy-headers) n'accepte X-Forwarded-Proto/For que de ces IP.
+# Par défaut uvicorn ne fait confiance qu'à 127.0.0.1 : dans Docker le proxy arrive depuis le réseau Docker
+# (172.16.0.0/12), le schéma reste « http » et /admin référence ses CSS/JS en http:// -> bloqués par le navigateur.
+ENV FORWARDED_ALLOW_IPS="127.0.0.1,::1,172.16.0.0/12"
 
 EXPOSE 8000
 HEALTHCHECK --interval=30s --timeout=5s --start-period=20s \

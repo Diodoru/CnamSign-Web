@@ -148,6 +148,19 @@ docker compose up -d --build
 - Clés : `./secrets/` sur l'hôte, montées en lecture seule dans `/run/secrets/`.
 - Un seul worker uvicorn (le planificateur tourne dans le processus) : ne pas augmenter `--workers`.
 - Derrière un reverse proxy HTTPS : `SESSION_COOKIE_SECURE=true` et `APP_BASE_URL=https://...`.
+  Le proxy doit transmettre `X-Forwarded-Proto` et son IP doit figurer dans `FORWARDED_ALLOW_IPS`
+  (par défaut : localhost et réseaux Docker `172.16.0.0/12`). Si le proxy tourne sur une autre machine,
+  ajoutez son IP dans `.env`, sinon les liens de `/admin` sont générés en `http://`.
+- Le build exécute `scripts/check_build.py` : il échoue si un template, la traduction ou une ressource de
+  `/admin` manque dans l'image (vérifiable aussi en local : `python scripts/check_build.py`).
+
+### Dépannage : `/admin` s'affiche sans mise en page en production
+
+Symptôme : sidebar en liste à puces, zone centrale vide (le tableau est repoussé sous la ligne de flottaison).
+Cause : page servie en HTTPS par le proxy mais ressources demandées en `http://` → bloquées par le navigateur
+(console : *Mixed Content*). Les CSS/JS de l'admin sont désormais en chemins relatifs, donc la mise en page
+s'affiche quoi qu'il arrive ; vérifiez néanmoins `FORWARDED_ALLOW_IPS` pour que les liens et formulaires
+de l'admin restent en HTTPS.
 - RAM : prévoir ~400 Mo par Chromium actif. `MAX_CONCURRENT_JOBS=1` sérialise les vérifications ;
   avec un intervalle de 5 min et ~45 s par vérification, comptez une dizaine d'utilisateurs par job simultané.
 
