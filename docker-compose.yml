@@ -18,6 +18,9 @@ services:
       DATA_DIR: /data
       # Une ancienne base /data/cnamsign.db est renommée automatiquement au démarrage.
       DATABASE_URL: sqlite:////data/cnamsignsign.db
+      # IP du reverse proxy autorisées à transmettre X-Forwarded-Proto (https). Proxy hors réseau Docker
+      # (autre machine du LAN) : ajouter son IP dans .env, ex. FORWARDED_ALLOW_IPS=127.0.0.1,172.16.0.0/12,192.168.1.10
+      FORWARDED_ALLOW_IPS: ${FORWARDED_ALLOW_IPS:-127.0.0.1,::1,172.16.0.0/12}
     secrets:
       - secret_key
       - encryption_key
