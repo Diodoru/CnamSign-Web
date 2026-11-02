@@ -1,0 +1,103 @@
+{#- Surcharge de sqladmin/base.html : thème sombre « EasyAdmin 4 » + accents rouge Cnam, interface en français.
+    Hérite du template d'origine (préfixe sqladmin_original/ fourni par SQLAdmin) : seuls les blocs ci-dessous changent. -#}
+{% extends "sqladmin_original/base.html" %}
+
+{% block head_tail %}
+{{ super() }}
+<script>
+  // Avant le rendu du <body> : mode sombre Tabler et langue, sans flash clair au chargement.
+  document.documentElement.setAttribute("data-bs-theme", "dark");
+  document.documentElement.setAttribute("lang", "fr");
+</script>
+<style>
+  /* Palette inspirée d'EasyAdmin 4, accents rouge Cnam (#e2001a). */
+  :root, [data-bs-theme=dark] {
+    --admin-sidebar: #181f2c;
+    --admin-page: #1e2638;
+    --admin-surface: #253043;
+    --admin-surface-hover: #2c394f;
+    --admin-border: #323f54;
+    --admin-text: #f9fafb;
+    --admin-muted: #9aa5b8;
+    --admin-accent: #e2001a;
+    --admin-accent-hover: #ef4444;
+
+    --tblr-primary: var(--admin-accent);
+    --tblr-primary-rgb: 226, 0, 26;
+    --tblr-primary-darken: #be0016;
+    --tblr-primary-fg: #ffffff;
+    --tblr-link-color: var(--admin-accent-hover);
+    --tblr-link-color-rgb: 239, 68, 68;
+    --tblr-link-hover-color: #f87171;
+  }
+  [data-bs-theme=dark] {
+    --tblr-body-bg: var(--admin-page);
+    --tblr-body-bg-rgb: 30, 38, 56;
+    --tblr-body-color: #e5e7eb;
+    --tblr-emphasis-color: var(--admin-text);
+    --tblr-secondary-color: var(--admin-muted);
+    --tblr-bg-surface: var(--admin-surface);
+    --tblr-bg-surface-secondary: var(--admin-page);
+    --tblr-bg-surface-tertiary: var(--admin-surface-hover);
+    --tblr-secondary-bg: var(--admin-surface);
+    --tblr-tertiary-bg: var(--admin-surface-hover);
+    --tblr-border-color: var(--admin-border);
+    --tblr-border-color-translucent: rgba(50, 63, 84, .9);
+    --tblr-card-bg: var(--admin-surface);
+    --tblr-card-border-color: var(--admin-border);
+    --tblr-table-border-color: var(--admin-border);
+    --tblr-dropdown-bg: var(--admin-surface);
+  }
+
+  body { background-color: var(--admin-page); color: #e5e7eb; }
+  .page-wrapper { background-color: var(--admin-page); }
+
+  /* Sidebar */
+  .navbar-vertical { background-color: var(--admin-sidebar) !important; border-right: 1px solid var(--admin-border); }
+  .navbar-vertical .navbar-brand a { color: var(--admin-text); text-decoration: none; }
+  .admin-brand { display: flex; align-items: center; gap: .6rem; text-align: left; line-height: 1.15; }
+  .admin-brand-mark { display: grid; place-items: center; width: 2rem; height: 2rem; border-radius: .4rem;
+                      background: var(--admin-accent); color: #fff; font-size: .75rem; font-weight: 700; flex-shrink: 0; }
+  .admin-brand-title { font-size: 1rem; font-weight: 600; white-space: normal; }
+  .admin-brand-sub { display: block; font-size: .75rem; font-weight: 400; opacity: .75; }
+  .navbar-vertical .nav-link { color: #cbd5e1; border-radius: .4rem; }
+  .navbar-vertical .nav-link:hover { background-color: var(--admin-surface); color: var(--admin-text); }
+  .navbar-vertical .nav-item.active > .nav-link,
+  .navbar-vertical .nav-link.active { background-color: rgba(226, 0, 26, .15); color: var(--admin-text);
+                                      box-shadow: inset 3px 0 0 var(--admin-accent); }
+  .admin-back { border-color: var(--admin-border); color: #e5e7eb; background: transparent; }
+  .admin-back:hover { border-color: var(--admin-accent); color: #fff; background-color: rgba(226, 0, 26, .15); }
+
+  /* Cartes, tableaux, formulaires */
+  .card { background-color: var(--admin-surface); border-color: var(--admin-border); color: var(--admin-text); }
+  .card-header, .card-footer { border-color: var(--admin-border); background-color: transparent; }
+  .table { --tblr-table-bg: transparent; --tblr-table-color: #e5e7eb; }
+  .table thead th { color: var(--admin-muted); background-color: rgba(24, 31, 44, .55); border-color: var(--admin-border); }
+  .table-hover > tbody > tr:hover > * { --tblr-table-hover-bg: var(--admin-surface-hover); }
+  .form-control, .form-select { background-color: var(--admin-page); border-color: var(--admin-border); color: var(--admin-text); }
+  .form-control:focus, .form-select:focus { border-color: var(--admin-accent); box-shadow: 0 0 0 .2rem rgba(226, 0, 26, .25); }
+  .form-check-input:checked { background-color: var(--admin-accent); border-color: var(--admin-accent); }
+  .btn:not(.btn-primary):not(.btn-danger) { border-color: var(--admin-border); }
+  .btn-primary:hover { background-color: var(--admin-accent-hover); }
+  .page-link { background-color: var(--admin-surface); border-color: var(--admin-border); color: #e5e7eb; }
+  .active > .page-link, .page-link.active { background-color: var(--admin-accent); border-color: var(--admin-accent); color: #fff; }
+  .bg-secondary-lt { background-color: rgba(226, 0, 26, .15) !important; }
+  .text-dark { color: var(--admin-text) !important; }
+  .page-title { color: var(--admin-text); }
+  .badge-status-success { background: rgba(34, 197, 94, .15); color: #4ade80; }
+  .badge-status-failed { background: rgba(226, 0, 26, .18); color: #f87171; }
+</style>
+{% endblock %}
+
+{% block tail %}
+{{ super() }}
+<script>
+  // Finitions typographiques françaises sur la barre de recherche (textes non exposés à la traduction).
+  (function () {
+    var input = document.getElementById("search-input");
+    if (input) input.placeholder = input.placeholder.replace(/^([^:]+):\s*/, "$1 : ");
+    var reset = document.getElementById("search-reset");
+    if (reset) { reset.title = "Effacer"; reset.setAttribute("aria-label", "Effacer"); reset.innerHTML = "Effacer"; }
+  })();
+</script>
+{% endblock %}

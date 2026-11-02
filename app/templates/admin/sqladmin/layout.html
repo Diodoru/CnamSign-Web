@@ -1,0 +1,61 @@
+{#- Surcharge de sqladmin/layout.html (copie de SQLAdmin 0.32.0, à resynchroniser lors d'une mise à jour).
+    Modifications : titre de la sidebar sur 2 lignes, « Logout » remplacé par « Retour à l'application ». -#}
+{% extends "sqladmin/base.html" %}
+{% from 'sqladmin/_macros.html' import display_menu %}
+{% block body %}
+<div class="wrapper">
+  <aside class="navbar navbar-expand-lg navbar-vertical navbar-expand-md navbar-dark" data-bs-theme="dark">
+    <div class="container-fluid">
+      <h1 class="navbar-brand navbar-brand-autodark">
+        <a href="{{ url_for('admin:index') }}" class="admin-brand">
+          <span class="admin-brand-mark">CS</span>
+          <span class="admin-brand-title">{{ app_name }}<span class="admin-brand-sub">Administration</span></span>
+        </a>
+      </h1>
+      <nav class="navbar navbar-expand-sm shadow-none" id="navbar-menu"
+        data-sqladmin-menu="{{ admin.base_url }}">
+        <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarSupportedContent"
+          aria-controls="navbarSupportedContent" aria-expanded="false" aria-label="Afficher le menu">
+          <span class="navbar-toggler-icon"></span>
+        </button>
+        <div class="collapse navbar-collapse" id="navbarSupportedContent">
+          {{ display_menu(admin._menu, request) }}
+        </div>
+      </nav>
+      {# La session est celle de l'application : on y retourne plutôt que de se déconnecter. #}
+      <a href="/dashboard" class="btn admin-back btn-icon m-2 px-3">
+        <i class="fa-solid fa-arrow-left me-2"></i>
+        <span>Retour à l'application</span>
+      </a>
+    </div>
+  </aside>
+  <div class="page-wrapper">
+    {% block topbar %}{% endblock %}
+    <div class="container-fluid">
+      <div class="page-header d-print-none">
+        {% block content_header %}
+        <div class="row align-items-center">
+          <div class="col">
+            <h2 class="page-title">{{ title }}</h2>
+            <div class="page-pretitle">{{ subtitle }}</div>
+          </div>
+        </div>
+        {% endblock %}
+      </div>
+    </div>
+    <div class="page-body flex-grow-1">
+      <div class="container-fluid">
+        <div class="row row-deck row-cards">
+          {% block content %} {% endblock %}
+          {% block flash %}
+          {% include 'sqladmin/flash.html' %}
+          {% endblock %}
+          {% block secret_modal %}
+          {% include 'sqladmin/secret_modal.html' %}
+          {% endblock %}
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}

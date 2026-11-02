@@ -188,6 +188,23 @@ session web : un visiteur non connecté est renvoyé vers `/login`, un utilisate
 - Seuls `is_active` et `is_admin` sont modifiables ; un compte désactivé ne peut plus se connecter et n'est plus
   vérifié automatiquement. Un admin ne peut pas se retirer ses propres droits ni supprimer son compte.
 - Jamais affichés : hash du mot de passe, identifiants Le Cnam, PIN, webhook (chiffrés, jamais déchiffrés ici).
+- **Émargements** : historique de tous les utilisateurs (lecture seule, exportable), du plus récent au plus
+  ancien ; recherche par matière, code ou identifiant, filtre Succès / Échec.
+- `/admin` ouvre directement la liste des utilisateurs ; « Retour à l'application » ramène au tableau de bord.
+
+Interface en français, thème sombre (palette EasyAdmin 4, accents rouge Cnam), dates « 30 oct. 2026 à 11:51 »
+à l'heure de `TIMEZONE`. Personnalisation sans modifier le paquet SQLAdmin :
+
+| Élément | Fichier |
+|---|---|
+| Traduction française (SQLAdmin n'en fournit pas) | `app/admin_i18n/fr.po`, compilé en mémoire au démarrage |
+| Thème sombre, accents rouges | `app/templates/admin/sqladmin/base.html` (hérite du template d'origine) |
+| Sidebar : titre sur 2 lignes, lien de retour | `app/templates/admin/sqladmin/layout.html` (copie de SQLAdmin 0.32.0) |
+| Libellés des filtres (Tous / Oui / Non) | `app/templates/admin/sqladmin/filters/lookup_filter.html` |
+
+`sqladmin` est épinglé : lors d'une montée de version, comparer `layout.html` avec l'original et
+`fr.po` avec `sqladmin/translations/admin.pot`.
+
 ## Thème
 
 Bouton soleil / lune dans l'en-tête. Le choix est mémorisé dans le navigateur (`localStorage`) ; sans choix,
