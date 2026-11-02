@@ -20,6 +20,7 @@ from sqlalchemy.orm import Session
 from starlette.middleware.sessions import SessionMiddleware
 
 from app import UPSTREAM_URL, __version__
+from app.admin import setup_admin
 from app.config import get_settings
 from app.database import get_db, init_db
 from app.models import CheckStatus, CnamCredential, LogStatus, NotificationSetting, SignatureLog, User, utcnow
@@ -115,6 +116,9 @@ async def security_headers(request: Request, call_next):
     return response
 
 
+setup_admin(app)  # /admin, réservé aux comptes is_admin (voir app/admin.py)
+
+
 # --- Dépendances ---------------------------------------------------------------------------
 
 
@@ -148,7 +152,7 @@ async def verify_csrf(request: Request) -> None:
 def current_user(request: Request, db: Session = Depends(get_db)) -> User:
     user_id = request.session.get("uid")
     user = db.get(User, user_id) if user_id else None
-    if user is None:
+    if user is None or not user.is_active:  # compte supprimé ou désactivé par un admin
         request.session.clear()
         raise LoginRequired()
     return user
@@ -313,6 +317,9 @@ def login(
         login_limiter.record_failure(client_ip)
         return render(request, "login.html", status_code=401, mode="login", registration_open=_registration_open(db),
                       error="Identifiants incorrects.", username=username)
+    if not user.is_active:
+        return render(request, "login.html", status_code=403, mode="login", registration_open=_registration_open(db),
+                      error="Compte désactivé. Contactez un administrateur.", username=username)
 
     if password_needs_rehash(user.hashed_password):
         user.hashed_password = hash_password(password)

@@ -11,6 +11,7 @@ Interface web multi-utilisateurs pour automatiser et suivre l'émargement sur
 - Notifications par e-mail (réussite / échec) envoyées à l'adresse Le Cnam de l'utilisateur, et Discord (webhook) en option
 - Historique avec la matière / le cours extrait du mail d'émargement
 - Interface aux couleurs du Cnam (rouge `#E2001A`), mode clair / sombre
+- Panneau d'administration `/admin` (SQLAdmin) réservé aux administrateurs
 
 > Le nom **CnamSign** désigne le projet upstream d'origine (dépôt, variables `CNAMSIGN_*`, `/opt/cnamsign`)
 > et **CnamSignE** la plateforme officielle du Cnam : ces noms ne sont volontairement pas renommés.
@@ -177,6 +178,16 @@ Pour figer une version : `CNAMSIGN_REF=<sha ou tag>` dans `.env`. Le commit util
   quand l'utilisateur change ou supprime ses identifiants.
 - Les captures d'écran de l'upstream sont purgées après `SCREENSHOT_RETENTION_DAYS` jours.
 
+## Administration (`/admin`)
+
+Bouton « Administration » dans l'en-tête, visible uniquement des comptes `is_admin`. Le panneau réutilise la
+session web : un visiteur non connecté est renvoyé vers `/login`, un utilisateur non admin reçoit un **403**.
+
+- Liste des utilisateurs : ID, identifiant, actif, admin, création, dernière vérification ; recherche par
+  identifiant, filtres Admin / Actif.
+- Seuls `is_active` et `is_admin` sont modifiables ; un compte désactivé ne peut plus se connecter et n'est plus
+  vérifié automatiquement. Un admin ne peut pas se retirer ses propres droits ni supprimer son compte.
+- Jamais affichés : hash du mot de passe, identifiants Le Cnam, PIN, webhook (chiffrés, jamais déchiffrés ici).
 ## Thème
 
 Bouton soleil / lune dans l'en-tête. Le choix est mémorisé dans le navigateur (`localStorage`) ; sans choix,

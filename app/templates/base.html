@@ -83,6 +83,9 @@
       <div class="flex items-center gap-2 text-sm">
         {% if user %}
         <span class="hidden sm:inline muted">{{ user.username }}</span>
+        {% if user.is_admin %}
+        <a href="/admin/" class="btn-secondary">Administration</a>
+        {% endif %}
         {% endif %}
         <button type="button" onclick="toggleTheme()" class="btn-secondary px-2" aria-label="Basculer le thème clair / sombre"
                 title="Thème clair / sombre">

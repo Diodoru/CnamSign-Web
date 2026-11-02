@@ -17,3 +17,5 @@ cryptography==50.0.2
 argon2-cffi==25.1.0
 httpx==0.28.1
 tzdata==2026.6
+sqladmin==0.32.0
+wtforms==3.2.2

@@ -26,7 +26,16 @@ from sqlalchemy.orm import Session, sessionmaker
 
 from app.config import Settings
 from app.database import SessionLocal
-from app.models import CheckStatus, CnamCredential, LogSource, LogStatus, NotificationSetting, SignatureLog, utcnow
+from app.models import (
+    CheckStatus,
+    CnamCredential,
+    LogSource,
+    LogStatus,
+    NotificationSetting,
+    SignatureLog,
+    User,
+    utcnow,
+)
 from app.services.cnam_service import CnamService
 from app.services.notifier import Notifier
 
@@ -111,7 +120,11 @@ class SignatureScheduler:
     def _tick(self) -> None:
         now = utcnow()
         with self._session_factory() as db:
-            credentials = db.scalars(select(CnamCredential).where(CnamCredential.auto_sign_enabled.is_(True))).all()
+            credentials = db.scalars(
+                select(CnamCredential)
+                .join(User, User.id == CnamCredential.user_id)
+                .where(CnamCredential.auto_sign_enabled.is_(True), User.is_active.is_(True))
+            ).all()
             due = [
                 c.id
                 for c in credentials
