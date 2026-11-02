@@ -19,6 +19,7 @@ WORKDIR /app
 
 # 1) Dépendances de l'application (changent rarement : couche mise en cache)
 COPY requirements.txt .
+COPY scripts/install_upstream_deps.py scripts/
 RUN pip install -r requirements.txt
 
 # 2) Code upstream CnamSign, intégré tel quel (pas de fork).
@@ -32,9 +33,9 @@ RUN echo "cnamsign cache-bust: ${CNAMSIGN_CACHEBUST}" \
  && git -C "${CNAMSIGN_PATH}" checkout --quiet "${CNAMSIGN_REF}" \
  && git -C "${CNAMSIGN_PATH}" rev-parse HEAD > "${CNAMSIGN_PATH}/REVISION" \
  && rm -rf "${CNAMSIGN_PATH}/.git" \
- # Suppression de python-dotenv du requirements CnamSign pour éviter d'écraser la version récente demandée par pydantic-settings
- && sed -i '/python-dotenv/d' "${CNAMSIGN_PATH}/requirements.txt" \
- && pip install -r "${CNAMSIGN_PATH}/requirements.txt" \
+ # Dépendances upstream sauf celles épinglées par l'app (ex. python-dotenv requis >=1.2.2 par pydantic-settings)
+ && python scripts/install_upstream_deps.py "${CNAMSIGN_PATH}/requirements.txt" \
+ && pip check \
  && python -m playwright install --with-deps chromium \
  && rm -rf /var/lib/apt/lists/*
 

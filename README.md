@@ -113,13 +113,18 @@ la première chiffre, toutes déchiffrent.
 git clone https://github.com/ndh51/CnamSign.git vendor/CnamSign
 python -m venv .venv
 .venv/Scripts/activate          # Windows (Linux/macOS : source .venv/bin/activate)
-pip install -r requirements.txt -r vendor/CnamSign/requirements.txt
+pip install -r requirements.txt
+python scripts/install_upstream_deps.py vendor/CnamSign/requirements.txt
 python -m playwright install chromium
 cp .env.example .env            # puis renseigner SECRET_KEY et SECRET_ENCRYPTION_KEY
 uvicorn app.main:app --reload
 ```
 
 Ouvrir http://localhost:8000 : **le premier compte créé est administrateur**.
+
+`scripts/install_upstream_deps.py` installe les dépendances de l'upstream en ignorant celles que l'application
+épingle déjà (aujourd'hui `python-dotenv`, que l'upstream fixe à 1.0.1 alors que `pydantic-settings` exige ≥ 1.2.2).
+Le Dockerfile utilise le même script.
 Tesseract est optionnel en local (utilisé seulement si les touches du clavier PIN ne sont pas reconnues par leur nom).
 Mettre `HEADLESS=false` dans `.env` pour voir le navigateur.
 
