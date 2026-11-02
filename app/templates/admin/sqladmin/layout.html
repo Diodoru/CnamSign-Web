@@ -16,14 +16,23 @@
           </span>
         </a>
       </h1>
-      <nav class="navbar navbar-expand-sm shadow-none admin-sidebar-nav" id="navbar-menu"
+      {# navbar-expand-md (au lieu de -sm) : burger sur tout l'affichage mobile < 768px ;
+         au-delà, rendu identique (menu toujours déplié, bouton masqué). #}
+      <nav class="navbar navbar-expand-md shadow-none admin-sidebar-nav" id="navbar-menu"
         data-sqladmin-menu="{{ admin.base_url }}">
         <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarSupportedContent"
           aria-controls="navbarSupportedContent" aria-expanded="false" aria-label="Afficher le menu">
           <span class="navbar-toggler-icon"></span>
         </button>
         <div class="collapse navbar-collapse" id="navbarSupportedContent">
+          {# Mobile uniquement (styles dans base.html) : séparateur sous le titre, visible menu ouvert. #}
+          <hr class="admin-menu-separator">
           {{ display_menu(admin._menu, request) }}
+          {# Mobile uniquement : le retour à l'application rejoint les onglets du menu burger. #}
+          <a href="/dashboard" class="nav-link admin-back-mobile">
+            <span class="nav-link-icon"><i class="fa-solid fa-arrow-left"></i></span>
+            <span class="nav-link-title">Retour à l'application</span>
+          </a>
         </div>
       </nav>
       {# La session est celle de l'application : on y retourne plutôt que de se déconnecter. #}
