@@ -1,18 +1,22 @@
 {#- Surcharge de sqladmin/layout.html (copie de SQLAdmin 0.32.0, à resynchroniser lors d'une mise à jour).
-    Modifications : titre de la sidebar sur 2 lignes, « Logout » remplacé par « Retour à l'application ». -#}
+    Modifications : sidebar en 3 zones (en-tête / onglets / pied ancré en bas, styles dans base.html),
+    titre sur 2 lignes, « Logout » remplacé par « Retour à l'application ». -#}
 {% extends "sqladmin/base.html" %}
 {% from 'sqladmin/_macros.html' import display_menu %}
 {% block body %}
 <div class="wrapper">
-  <aside class="navbar navbar-expand-lg navbar-vertical navbar-expand-md navbar-dark" data-bs-theme="dark">
-    <div class="container-fluid">
-      <h1 class="navbar-brand navbar-brand-autodark">
+  <aside class="navbar navbar-expand-lg navbar-vertical navbar-expand-md navbar-dark admin-sidebar" data-bs-theme="dark">
+    <div class="container-fluid admin-sidebar-inner">
+      <h1 class="navbar-brand navbar-brand-autodark admin-sidebar-header">
         <a href="{{ url_for('admin:index') }}" class="admin-brand">
           <span class="admin-brand-mark">CS</span>
-          <span class="admin-brand-title">{{ app_name }}<span class="admin-brand-sub">Administration</span></span>
+          <span class="admin-brand-text">
+            <span class="admin-brand-title">{{ app_name }}</span>
+            <span class="admin-brand-sub">Administration</span>
+          </span>
         </a>
       </h1>
-      <nav class="navbar navbar-expand-sm shadow-none" id="navbar-menu"
+      <nav class="navbar navbar-expand-sm shadow-none admin-sidebar-nav" id="navbar-menu"
         data-sqladmin-menu="{{ admin.base_url }}">
         <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarSupportedContent"
           aria-controls="navbarSupportedContent" aria-expanded="false" aria-label="Afficher le menu">
@@ -23,10 +27,12 @@
         </div>
       </nav>
       {# La session est celle de l'application : on y retourne plutôt que de se déconnecter. #}
-      <a href="/dashboard" class="btn admin-back btn-icon m-2 px-3">
-        <i class="fa-solid fa-arrow-left me-2"></i>
-        <span>Retour à l'application</span>
-      </a>
+      <div class="admin-sidebar-footer">
+        <a href="/dashboard" class="admin-back">
+          <i class="fa-solid fa-arrow-left"></i>
+          <span>Retour à l'application</span>
+        </a>
+      </div>
     </div>
   </aside>
   <div class="page-wrapper">
